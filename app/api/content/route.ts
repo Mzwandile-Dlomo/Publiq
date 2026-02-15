@@ -2,14 +2,16 @@ import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { PLATFORMS } from "@/lib/platforms";
 
 const contentSchema = z.object({
     title: z.string().min(1),
     description: z.string().optional(),
     videoUrl: z.string().url(),
     thumbnailUrl: z.string().url().optional(),
-    scheduledAt: z.string().optional(), // Date passed as ISO string
+    scheduledAt: z.string().optional(),
     status: z.enum(["draft", "scheduled"]).optional(),
+    platforms: z.array(z.enum(PLATFORMS)).min(1, "Select at least one platform"),
 });
 
 export async function POST(req: Request) {
@@ -20,7 +22,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { title, description, videoUrl, thumbnailUrl } = contentSchema.parse(body);
+        const { title, description, videoUrl, thumbnailUrl, platforms } = contentSchema.parse(body);
 
         const content = await prisma.content.create({
             data: {
@@ -32,15 +34,15 @@ export async function POST(req: Request) {
                 status: body.status || "draft",
                 scheduledAt: body.scheduledAt,
                 publications: {
-                    create: {
-                        platform: "youtube",
-                        status: "pending"
-                    }
-                }
+                    create: platforms.map((platform) => ({
+                        platform,
+                        status: "pending",
+                    })),
+                },
             },
             include: {
-                publications: true
-            }
+                publications: true,
+            },
         });
 
         return NextResponse.json({ content });

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { uploadToYouTube } from "@/lib/youtube";
+import { getPublisher } from "@/lib/platforms/registry";
+import { platformConfigs, type Platform } from "@/lib/platforms";
 
 export async function POST(
     req: Request,
-    { params }: { params: Promise<{ id: string }> } // Params are promises in Next.js 15+ (and 14 in some configs, best to await)
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const session = await verifySession();
     if (!session) {
@@ -14,57 +15,87 @@ export async function POST(
 
     const { id } = await params;
 
-    // 1. Fetch Content
     const content = await prisma.content.findUnique({
         where: { id, userId: session.userId as string },
+        include: { publications: true },
     });
 
     if (!content) {
         return NextResponse.json({ error: "Content not found" }, { status: 404 });
     }
 
-    // 2. Upload to YouTube
-    try {
-        const youtubeVideo = await uploadToYouTube(
-            session.userId as string,
-            content.id,
-            content.videoUrl,
-            content.title,
-            content.description || ""
-        );
+    // Get all pending publications for this content
+    const pendingPublications = content.publications.filter(
+        (p) => p.status === "pending"
+    );
 
-        // 3. Update Status
-        // Update Content status
-        await prisma.content.update({
-            where: { id },
-            data: { status: "published" },
-        });
-
-        // Update Publication status (assuming we have one for youtube, or create if missing)
-        // We created one in POST /api/content, so we update it.
-        // We need to find the specific publication ID or update many.
-        await prisma.publication.updateMany({
-            where: { contentId: id, platform: "youtube" },
-            data: {
-                status: "success",
-                platformPostId: youtubeVideo.id,
-                publishedAt: new Date(),
-            },
-        });
-
-        return NextResponse.json({ success: true, videoId: youtubeVideo.id });
-    } catch (error: any) {
-        console.error("Publishing Error:", error);
-
-        // Update Publication status to failed
-        await prisma.publication.updateMany({
-            where: { contentId: id, platform: "youtube" },
-            data: {
-                status: "failed",
-                errorMessage: error.message || "Unknown error",
-            },
-        });
-
-        return NextResponse.json({ error: "Failed to publish to YouTube" }, { status: 500 });
+    if (pendingPublications.length === 0) {
+        return NextResponse.json({ error: "No pending publications" }, { status: 400 });
     }
+
+    const results = [];
+
+    for (const publication of pendingPublications) {
+        const platform = publication.platform as Platform;
+        const config = platformConfigs[platform];
+
+        // Skip unavailable platforms
+        if (!config?.available) {
+            await prisma.publication.update({
+                where: { id: publication.id },
+                data: {
+                    status: "failed",
+                    errorMessage: `${config?.name || platform} is not yet available`,
+                },
+            });
+            results.push({ platform, status: "failed", error: `${config?.name || platform} not yet available` });
+            continue;
+        }
+
+        try {
+            const publisher = getPublisher(platform);
+            const result = await publisher.publish(session.userId as string, {
+                id: content.id,
+                videoUrl: content.videoUrl,
+                title: content.title,
+                description: content.description,
+            });
+
+            await prisma.publication.update({
+                where: { id: publication.id },
+                data: {
+                    status: "success",
+                    platformPostId: result.platformPostId,
+                    publishedAt: result.publishedAt,
+                },
+            });
+
+            results.push({ platform, status: "success", postId: result.platformPostId });
+        } catch (error: any) {
+            console.error(`Publishing to ${platform} failed:`, error);
+
+            await prisma.publication.update({
+                where: { id: publication.id },
+                data: {
+                    status: "failed",
+                    errorMessage: error.message || "Unknown error",
+                },
+            });
+
+            results.push({ platform, status: "failed", error: error.message });
+        }
+    }
+
+    // Update content status based on results
+    const allSucceeded = results.every((r) => r.status === "success");
+    const anySucceeded = results.some((r) => r.status === "success");
+
+    await prisma.content.update({
+        where: { id },
+        data: {
+            status: allSucceeded ? "published" : anySucceeded ? "published" : "draft",
+        },
+    });
+
+    return NextResponse.json({ results });
 }
