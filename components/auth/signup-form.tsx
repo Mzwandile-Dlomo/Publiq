@@ -48,7 +48,7 @@ export function SignupForm() {
     }
 
     return (
-        <Card className="w-full max-w-sm">
+        <Card className="w-full max-w-sm rounded-3xl border border-white/70 bg-white/85 shadow-sm">
             <CardHeader>
                 <CardTitle className="text-2xl">Sign Up</CardTitle>
                 <CardDescription>
@@ -73,7 +73,7 @@ export function SignupForm() {
                         {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
                     </div>
                     {error && <p className="text-sm text-red-500">{error}</p>}
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
                         {isLoading ? "Creating account..." : "Sign Up"}
                     </Button>
                 </form>
