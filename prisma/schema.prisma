@@ -49,6 +49,7 @@ model Content {
   videoUrl    String
   thumbnailUrl String?
   status      String   @default("draft") // "draft", "scheduled", "published"
+  scheduledAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
@@ -65,6 +66,9 @@ model Publication {
   platformPostId String?
   publishedAt DateTime?
   errorMessage String?
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  comments    Int      @default(0)
 
   content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
 }
