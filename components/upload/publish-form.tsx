@@ -16,6 +16,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PlatformSelector } from "@/components/platforms/platform-selector";
+import type { Platform } from "@/lib/platforms";
 
 const metadataSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -37,16 +39,22 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
     const [isScheduling, setIsScheduling] = useState(false);
     const [contentId, setContentId] = useState<string | null>(null);
     const [date, setDate] = useState<Date | undefined>(undefined);
+    const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([]);
 
     const { register, handleSubmit, trigger, getValues, formState: { errors } } = useForm<MetadataFormValues>({
         resolver: zodResolver(metadataSchema),
         defaultValues: {
-            title: fileName.split(".").slice(0, -1).join(".") || fileName, // Default title from filename
+            title: fileName.split(".").slice(0, -1).join(".") || fileName,
             description: "",
         },
     });
 
     async function onSave(data: MetadataFormValues, status: 'draft' | 'scheduled' = 'draft') {
+        if (selectedPlatforms.length === 0) {
+            toast.error("Please select at least one platform");
+            return null;
+        }
+
         setIsSaving(true);
         try {
             const res = await fetch("/api/content", {
@@ -58,6 +66,7 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
                     videoUrl: fileUrl,
                     scheduledAt: date,
                     status,
+                    platforms: selectedPlatforms,
                 }),
             });
 
@@ -93,9 +102,13 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
     }
 
     async function onPublish() {
+        if (selectedPlatforms.length === 0) {
+            toast.error("Please select at least one platform");
+            return;
+        }
+
         let idToPublish = contentId;
         if (!idToPublish) {
-            // Auto-save if not saved
             const isValid = await trigger();
             if (!isValid) {
                 toast.error("Please fix validation errors");
@@ -121,7 +134,17 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
                 throw new Error(json.error || "Failed to publish");
             }
 
-            toast.success("Video published to YouTube successfully!");
+            const result = await res.json();
+            const successCount = result.results?.filter((r: any) => r.status === "success").length || 0;
+            const failCount = result.results?.filter((r: any) => r.status === "failed").length || 0;
+
+            if (failCount > 0 && successCount > 0) {
+                toast.warning(`Published to ${successCount} platform(s), ${failCount} failed.`);
+            } else if (failCount > 0) {
+                toast.error("Failed to publish to all platforms.");
+            } else {
+                toast.success(`Published to ${successCount} platform(s) successfully!`);
+            }
             router.push("/dashboard");
         } catch (error: any) {
             toast.error(error.message || "Error publishing video");
@@ -129,6 +152,8 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
             setIsPublishing(false);
         }
     }
+
+    const isLoading = isSaving || isPublishing || isScheduling;
 
     return (
         <Card>
@@ -146,6 +171,17 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
                     <div className="space-y-2">
                         <Label htmlFor="description">Description</Label>
                         <Textarea id="description" {...register("description")} />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Publish to</Label>
+                        <PlatformSelector
+                            selected={selectedPlatforms}
+                            onChange={setSelectedPlatforms}
+                        />
+                        {selectedPlatforms.length === 0 && (
+                            <p className="text-xs text-muted-foreground">Select at least one platform to publish to.</p>
+                        )}
                     </div>
 
                     <div className="space-y-2">
@@ -179,13 +215,13 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
                     </div>
 
                     <div className="flex gap-4 pt-4">
-                        <Button onClick={handleSubmit((data) => onSave(data))} disabled={isSaving || isPublishing || isScheduling} variant="outline">
+                        <Button onClick={handleSubmit((data) => onSave(data))} disabled={isLoading} variant="outline">
                             {isSaving ? "Saving..." : "Save Draft"}
                         </Button>
 
                         <Button
                             type="button"
-                            disabled={!date || isScheduling || isPublishing}
+                            disabled={!date || isLoading}
                             onClick={onSchedule}
                             variant="secondary"
                         >
@@ -194,7 +230,7 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
 
                         <Button
                             type="button"
-                            disabled={isPublishing || isScheduling}
+                            disabled={isLoading || selectedPlatforms.length === 0}
                             onClick={onPublish}
                             variant="default"
                         >

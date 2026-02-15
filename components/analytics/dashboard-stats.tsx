@@ -25,12 +25,6 @@ export function DashboardStats() {
         fetchStats();
     }, []);
 
-    if (loading) {
-        return <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card><CardHeader><CardTitle>Loading stats...</CardTitle></CardHeader></Card>
-        </div>
-    }
-
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card>
@@ -40,6 +34,7 @@ export function DashboardStats() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{stats.views.toLocaleString()}</div>
+                    {loading && <div className="mt-1 text-xs text-muted-foreground">Updating…</div>}
                 </CardContent>
             </Card>
             <Card>
@@ -49,6 +44,7 @@ export function DashboardStats() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{stats.likes.toLocaleString()}</div>
+                    {loading && <div className="mt-1 text-xs text-muted-foreground">Updating…</div>}
                 </CardContent>
             </Card>
             <Card>
@@ -58,6 +54,7 @@ export function DashboardStats() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{stats.comments.toLocaleString()}</div>
+                    {loading && <div className="mt-1 text-xs text-muted-foreground">Updating…</div>}
                 </CardContent>
             </Card>
         </div>

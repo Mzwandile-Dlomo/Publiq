@@ -67,33 +67,41 @@ export function PricingCards() {
     }
 
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+        <div className="flex justify-center">
             {PLANS.map((plan) => (
-                <Card key={plan.name} className="flex flex-col">
-                    <CardHeader>
-                        <CardTitle>{plan.name}</CardTitle>
-                        <CardDescription>{plan.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1">
-                        <div className="text-3xl font-bold mb-4">{plan.price}</div>
-                        <ul className="space-y-2">
-                            {plan.features.map((feature) => (
-                                <li key={feature} className="flex items-center text-sm">
-                                    <Check className="mr-2 h-4 w-4 text-green-500" />
-                                    {feature}
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                    <CardFooter>
-                        <Button
-                            className="w-full"
-                            onClick={() => onSubscribe(plan.priceId)}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "Loading..." : "Subscribe"}
-                        </Button>
-                    </CardFooter>
+                <Card key={plan.name} className="w-full max-w-2xl rounded-3xl border border-white/70 bg-white/90 shadow-md">
+                    <div className="grid gap-6 p-6 md:grid-cols-[1.1fr_0.9fr] md:items-center">
+                        <div className="space-y-4">
+                            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                                Creator Plan
+                            </div>
+                            <div>
+                                <CardTitle className="text-3xl">{plan.name}</CardTitle>
+                                <CardDescription className="mt-2 text-base">
+                                    {plan.description}
+                                </CardDescription>
+                            </div>
+                            <div className="text-4xl font-semibold">{plan.price}</div>
+                            <Button
+                                className="w-full rounded-full md:w-auto"
+                                onClick={() => onSubscribe(plan.priceId)}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Loading..." : "Subscribe"}
+                            </Button>
+                        </div>
+                        <div className="rounded-2xl border border-border bg-white p-5">
+                            <div className="text-sm font-semibold">Everything in Pro</div>
+                            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                                {plan.features.map((feature) => (
+                                    <li key={feature} className="flex items-center">
+                                        <Check className="mr-2 h-4 w-4 text-emerald-500" />
+                                        {feature}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
                 </Card>
             ))}
         </div>
