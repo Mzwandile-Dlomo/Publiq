@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { platformConfigs, type Platform } from "@/lib/platforms";
 import { DeleteContentButton } from "@/components/dashboard/delete-content-button";
 import { EditContentDialog } from "@/components/content/edit-content-dialog";
+import { PublicationStats } from "@/components/content/publication-stats";
 
 type ContentItem = {
     id: string;
@@ -20,6 +21,9 @@ type ContentItem = {
         platform: string;
         status: string;
         platformPostId: string | null;
+        views: number;
+        likes: number;
+        comments: number;
     }[];
 };
 
@@ -109,6 +113,9 @@ export function ContentList({ items }: { items: ContentItem[] }) {
                                         </div>
                                     )}
                                 </div>
+                                {item.status === "published" && (
+                                    <PublicationStats publications={item.publications} />
+                                )}
                             </div>
 
                             <div className="flex items-center gap-1">

@@ -129,7 +129,7 @@ export default async function Home() {
         </section>
 
         <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-border py-8 text-xs text-muted-foreground">
-          <span>© 2026 Publiq</span>
+          <span>© {new Date().getFullYear()} Publiq</span>
           <div className="flex items-center gap-4">
             <Link href="/terms" className="transition hover:text-foreground">
               Terms

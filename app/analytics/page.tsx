@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { DashboardStats } from "@/components/analytics/dashboard-stats";
+import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard";
 
 export default async function AnalyticsPage() {
     const session = await verifySession();
@@ -32,7 +32,7 @@ export default async function AnalyticsPage() {
                 </div>
 
                 <div className="mt-12">
-                    <DashboardStats />
+                    <AnalyticsDashboard />
                 </div>
             </div>
         </div>

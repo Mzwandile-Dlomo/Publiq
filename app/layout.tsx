@@ -25,6 +25,10 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Publiq",
   description: "",
+  icons: {
+    icon: "/publiq.png",
+    apple: "/publiq.png",
+  },
 };
 
 export default function RootLayout({

@@ -32,6 +32,9 @@ export default async function ContentPage() {
             platform: pub.platform,
             status: pub.status,
             platformPostId: pub.platformPostId,
+            views: pub.views,
+            likes: pub.likes,
+            comments: pub.comments,
         })),
     }));
 
