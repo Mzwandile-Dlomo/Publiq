@@ -19,8 +19,7 @@ export async function Navbar() {
         .toUpperCase();
 
     return (
-        <div className="bg-aurora bg-noise">
-        <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 pt-8">
+        <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between px-6 pt-8">
             <Link href="/" className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-xl font-semibold">
                     P
@@ -31,25 +30,39 @@ export async function Navbar() {
                 </div>
             </Link>
 
-            {/* Desktop nav */}
-            <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
+            {/* Desktop nav – visible md+ only */}
+            <nav className="desktop-only items-center gap-5 text-sm font-medium">
                 <NavLink
                     href="/dashboard"
-                    className="text-muted-foreground hover:text-foreground"
-                    activeClassName="text-foreground"
+                    className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                    activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
                 >
                     Dashboard
                 </NavLink>
                 <NavLink
-                    href="/pricing"
-                    className="text-muted-foreground hover:text-foreground"
-                    activeClassName="text-foreground"
+                    href="/upload"
+                    className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                    activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
                 >
-                    Pricing
+                    Upload
+                </NavLink>
+                <NavLink
+                    href="/schedule"
+                    className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                    activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                >
+                    Schedule
+                </NavLink>
+                <NavLink
+                    href="/analytics"
+                    className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                    activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                >
+                    Analytics
                 </NavLink>
                 {session ? (
                     <>
-                        <div className="flex items-center gap-3 rounded-full border border-white/70 bg-white/80 px-4 py-2">
+                        <Link href="/settings" className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2 hover:border-foreground/20 transition-colors">
                             {user?.image ? (
                                 <img
                                     src={user.image}
@@ -64,7 +77,7 @@ export async function Navbar() {
                             <div className="text-left">
                                 <div className="text-sm font-semibold">{displayName}</div>
                             </div>
-                        </div>
+                        </Link>
                         <form action="/api/auth/logout" method="post">
                             <button
                                 type="submit"
@@ -100,6 +113,5 @@ export async function Navbar() {
                 userImage={user?.image}
             />
         </header>
-        </div>
     );
 }

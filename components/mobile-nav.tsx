@@ -22,7 +22,7 @@ export function MobileNav({
         <div className="md:hidden">
             <button
                 onClick={() => setOpen(true)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white/80 text-foreground"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-foreground"
                 aria-label="Open menu"
             >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -32,7 +32,7 @@ export function MobileNav({
             </button>
 
             {open && createPortal(
-                <div className="fixed inset-0 z-50 flex flex-col bg-aurora px-6 pt-8 pb-6 md:hidden">
+                <div className="fixed inset-0 z-50 flex flex-col bg-background px-6 pt-8 pb-6 md:hidden">
                     <div className="flex items-center justify-between">
                         <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3">
                             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-xl font-semibold">
@@ -45,7 +45,7 @@ export function MobileNav({
                         </Link>
                         <button
                             onClick={() => setOpen(false)}
-                            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white/80 text-foreground"
+                            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-foreground"
                             aria-label="Close menu"
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -55,10 +55,10 @@ export function MobileNav({
                         </button>
                     </div>
                     <nav className="mt-10 flex flex-col items-center gap-4 text-sm font-medium">
-                        <NavLink href="/dashboard" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-white/50 hover:text-foreground" activeClassName="bg-white/50 text-foreground">
+                        <NavLink href="/dashboard" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
                             Dashboard
                         </NavLink>
-                        <NavLink href="/pricing" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-white/50 hover:text-foreground" activeClassName="bg-white/50 text-foreground">
+                        <NavLink href="/pricing" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
                             Pricing
                         </NavLink>
                         <div className="my-1 h-px w-full bg-border" />

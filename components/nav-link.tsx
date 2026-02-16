@@ -23,7 +23,7 @@ export function NavLink({
         <Link
             href={href}
             onClick={onClick}
-            className={`${className} ${isActive ? activeClassName : ""}`}
+            className={isActive ? activeClassName : className}
         >
             {children}
         </Link>
