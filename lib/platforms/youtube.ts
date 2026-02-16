@@ -8,6 +8,10 @@ export const youtubePublisher: PlatformPublisher = {
     platform: "youtube",
 
     async publish(userId, content) {
+        if (content.mediaType === "image") {
+            throw new Error("YouTube does not support image posts");
+        }
+
         const socialAccount = await prisma.socialAccount.findFirst({
             where: { userId, provider: "youtube" },
         });
@@ -24,7 +28,7 @@ export const youtubePublisher: PlatformPublisher = {
 
         const youtube = google.youtube({ version: "v3", auth: oauth2Client });
 
-        const response = await fetch(content.videoUrl);
+        const response = await fetch(content.mediaUrl);
         if (!response.body) {
             throw new Error("Failed to fetch video file");
         }

@@ -45,7 +45,8 @@ beforeEach(() => {
 describe("youtubePublisher", () => {
     const content = {
         id: "content-1",
-        videoUrl: "https://example.com/video.mp4",
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video" as const,
         title: "Test Video",
         description: "Test description",
     };

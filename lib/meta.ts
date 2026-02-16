@@ -83,6 +83,70 @@ export async function publishFacebookVideo(
     return { id: data.id };
 }
 
+export async function publishFacebookPhoto(
+    pageAccessToken: string,
+    pageId: string,
+    imageUrl: string,
+    caption: string
+) {
+    const url = `https://graph.facebook.com/${pageId}/photos?access_token=${pageAccessToken}`;
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            url: imageUrl,
+            message: caption,
+        })
+    });
+
+    const data = await response.json();
+    if (data.error) {
+        throw new Error(data.error.message);
+    }
+
+    return { id: data.id };
+}
+
+export async function publishInstagramImage(
+    pageAccessToken: string,
+    igUserId: string,
+    imageUrl: string,
+    caption: string
+) {
+    // 1. Create Media Container for IMAGE
+    const containerUrl = `https://graph.facebook.com/v19.0/${igUserId}/media?access_token=${pageAccessToken}`;
+
+    const containerRes = await fetch(containerUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            image_url: imageUrl,
+            caption: caption,
+        })
+    });
+
+    const containerData = await containerRes.json();
+    if (containerData.error) throw new Error(containerData.error.message);
+
+    const containerId = containerData.id;
+
+    // 2. Publish Container
+    const publishUrl = `https://graph.facebook.com/v19.0/${igUserId}/media_publish?access_token=${pageAccessToken}`;
+    const publishRes = await fetch(publishUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            creation_id: containerId
+        })
+    });
+
+    const publishData = await publishRes.json();
+    if (publishData.error) throw new Error(publishData.error.message);
+
+    return { id: publishData.id };
+}
+
 export async function publishInstagramReel(
     pageAccessToken: string, // We use Page Token that has permissions for the linked IG account
     igUserId: string,

@@ -11,13 +11,15 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/lib/meta", () => ({
     publishFacebookVideo: vi.fn(),
+    publishFacebookPhoto: vi.fn(),
 }));
 
 import { prisma } from "@/lib/prisma";
-import { publishFacebookVideo } from "@/lib/meta";
+import { publishFacebookVideo, publishFacebookPhoto } from "@/lib/meta";
 
 const mockFindFirst = vi.mocked(prisma.socialAccount.findFirst);
 const mockPublishVideo = vi.mocked(publishFacebookVideo);
+const mockPublishPhoto = vi.mocked(publishFacebookPhoto);
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -26,7 +28,8 @@ beforeEach(() => {
 describe("facebookPublisher", () => {
     const content = {
         id: "content-1",
-        videoUrl: "https://example.com/video.mp4",
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video" as const,
         title: "Test Video",
         description: "Test description",
     };
@@ -70,7 +73,7 @@ describe("facebookPublisher", () => {
         expect(mockPublishVideo).toHaveBeenCalledWith(
             "page-token",
             "page-1",
-            content.videoUrl,
+            content.mediaUrl,
             "Test Video"
         );
     });
@@ -89,8 +92,63 @@ describe("facebookStatsProvider", () => {
         expect(facebookStatsProvider.platform).toBe("facebook");
     });
 
-    it("returns empty stats (not yet implemented)", async () => {
+    it("returns empty object when no account is connected", async () => {
+        mockFindFirst.mockResolvedValueOnce(null);
         const result = await facebookStatsProvider.getStats("user-1", ["post-1"]);
         expect(result).toEqual({});
+    });
+
+    it("returns empty object for empty post IDs array", async () => {
+        const result = await facebookStatsProvider.getStats("user-1", []);
+        expect(result).toEqual({});
+    });
+
+    it("fetches stats from Facebook Graph API", async () => {
+        mockFindFirst.mockResolvedValueOnce({
+            accessToken: "page-token-abc",
+            providerId: "page-123",
+        } as any);
+
+        const mockResponse = {
+            ok: true,
+            json: vi.fn().mockResolvedValue({
+                views: 1500,
+                likes: { summary: { total_count: 42 } },
+                comments: { summary: { total_count: 7 } },
+            }),
+        };
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockResponse));
+
+        const result = await facebookStatsProvider.getStats("user-1", ["video-789"]);
+
+        expect(result).toEqual({
+            "video-789": {
+                views: 1500,
+                likes: 42,
+                comments: 7,
+            },
+        });
+
+        vi.unstubAllGlobals();
+    });
+
+    it("skips posts that return API errors", async () => {
+        mockFindFirst.mockResolvedValueOnce({
+            accessToken: "page-token-abc",
+            providerId: "page-123",
+        } as any);
+
+        const mockResponse = {
+            ok: true,
+            json: vi.fn().mockResolvedValue({
+                error: { message: "Unsupported get request" },
+            }),
+        };
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockResponse));
+
+        const result = await facebookStatsProvider.getStats("user-1", ["bad-id"]);
+        expect(result).toEqual({});
+
+        vi.unstubAllGlobals();
     });
 });

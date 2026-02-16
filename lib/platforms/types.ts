@@ -1,8 +1,11 @@
 import type { Platform } from "./index";
 
+export type MediaType = "video" | "image";
+
 export interface PublishableContent {
     id: string;
-    videoUrl: string;
+    mediaUrl: string;
+    mediaType: MediaType;
     title: string;
     description: string | null;
 }

@@ -6,17 +6,19 @@ export const tiktokPublisher: PlatformPublisher = {
     platform: "tiktok",
 
     async publish(userId, content) {
-        // 1. Get Credentials
+        if (content.mediaType === "image") {
+            throw new Error("TikTok does not support image posts");
+        }
+
         const account = await prisma.socialAccount.findFirst({
             where: { userId, provider: "tiktok" }
         });
 
         if (!account) throw new Error("No TikTok account connected");
 
-        // 2. Upload
         const result = await uploadToTikTok(
             account.accessToken,
-            content.videoUrl,
+            content.mediaUrl,
             content.description || content.title
         );
 

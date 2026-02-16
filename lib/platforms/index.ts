@@ -1,6 +1,8 @@
 export const PLATFORMS = ["youtube", "tiktok", "instagram", "facebook"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
+export type MediaType = "video" | "image";
+
 export interface PlatformConfig {
     id: Platform;
     name: string;
@@ -12,6 +14,7 @@ export interface PlatformConfig {
     connectUrl: string; // OAuth entry point
     /** Whether this platform's integration is fully implemented */
     available: boolean;
+    supportedMediaTypes: MediaType[];
 }
 
 export const platformConfigs: Record<Platform, PlatformConfig> = {
@@ -25,6 +28,7 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
         description: "Upload videos and track performance on YouTube.",
         connectUrl: "/api/auth/google/url",
         available: true,
+        supportedMediaTypes: ["video"],
     },
     tiktok: {
         id: "tiktok",
@@ -36,6 +40,7 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
         description: "Share short-form videos on TikTok.",
         connectUrl: "/api/auth/tiktok/url",
         available: true,
+        supportedMediaTypes: ["video"],
     },
     instagram: {
         id: "instagram",
@@ -44,9 +49,10 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
         color: "text-pink-600",
         bgColor: "bg-pink-50",
         borderColor: "border-pink-200",
-        description: "Post Reels and videos to Instagram.",
+        description: "Post photos, Reels, and videos to Instagram.",
         connectUrl: "/api/auth/instagram/url",
         available: true,
+        supportedMediaTypes: ["video", "image"],
     },
     facebook: {
         id: "facebook",
@@ -55,9 +61,10 @@ export const platformConfigs: Record<Platform, PlatformConfig> = {
         color: "text-blue-600",
         bgColor: "bg-blue-50",
         borderColor: "border-blue-200",
-        description: "Publish videos to your Facebook page.",
+        description: "Publish photos and videos to your Facebook page.",
         connectUrl: "/api/auth/facebook/url",
         available: true,
+        supportedMediaTypes: ["video", "image"],
     },
 };
 
