@@ -1,18 +1,13 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { getPlatformPostUrl, platformConfigs, type Platform } from "@/lib/platforms";
 import { ScheduleCalendar } from "@/components/schedule/schedule-calendar";
 import { ContentNav } from "@/components/content/content-nav";
+import { getAuthenticatedUser } from "@/lib/auth-user";
 
 export default async function SchedulePage() {
-    const session = await verifySession();
-
-    if (!session) {
-        redirect("/auth/login");
-    }
+    const user = await getAuthenticatedUser();
 
     type ScheduledPublication = {
         id: string;
@@ -29,7 +24,7 @@ export default async function SchedulePage() {
 
     const scheduledItems = await prisma.content.findMany({
         where: {
-            userId: session.userId as string,
+            userId: user.id,
             status: "scheduled",
         },
         include: {

@@ -1,15 +1,10 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { verifySession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard";
+import { getAuthenticatedUser } from "@/lib/auth-user";
 
 export default async function AnalyticsPage() {
-    const session = await verifySession();
-
-    if (!session) {
-        redirect("/auth/login");
-    }
+    await getAuthenticatedUser();
 
     return (
         <div className="min-h-screen">

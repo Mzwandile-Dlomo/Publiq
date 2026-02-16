@@ -1,23 +1,12 @@
-import { verifySession } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Upload, Calendar, BarChart2, Settings, Eye, Heart } from "lucide-react";
+import { getAuthenticatedUser } from "@/lib/auth-user";
 
 export default async function DashboardPage() {
-    const session = await verifySession();
-
-    if (!session) {
-        redirect("/auth/login");
-    }
-
-    const userId = session.userId as string;
-
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { socialAccounts: true },
-    });
+    const user = await getAuthenticatedUser();
+    const userId = user.id;
 
     const [totalContent, scheduledCount, publishedCount, aggregates] = await Promise.all([
         prisma.content.count({ where: { userId } }),
