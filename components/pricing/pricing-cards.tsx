@@ -11,17 +11,16 @@ interface PricingPlan {
     name: string;
     description: string;
     price: string;
-    priceId: string;
+    plan: string;
     features: string[];
 }
 
-// Replace with actual Stripe Price IDs
 const PLANS: PricingPlan[] = [
     {
         name: "Pro",
         description: "For serious content creators.",
         price: "$19/month",
-        priceId: "price_1Q...", // TODO: Replace with real ID
+        plan: "pro",
         features: [
             "Unlimited uploads",
             "Connect all platforms (YouTube, TikTok, etc.)",
@@ -35,13 +34,13 @@ export function PricingCards() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
-    async function onSubscribe(priceId: string) {
+    async function onSubscribe(plan: string) {
         setIsLoading(true);
         try {
-            const res = await fetch("/api/stripe/checkout", {
+            const res = await fetch("/api/payfast/checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ priceId }),
+                body: JSON.stringify({ plan }),
             });
 
             if (!res.ok) {
@@ -84,7 +83,7 @@ export function PricingCards() {
                             <div className="text-4xl font-semibold">{plan.price}</div>
                             <Button
                                 className="w-full rounded-full md:w-auto"
-                                onClick={() => onSubscribe(plan.priceId)}
+                                onClick={() => onSubscribe(plan.plan)}
                                 disabled={isLoading}
                             >
                                 {isLoading ? "Loading..." : "Subscribe"}

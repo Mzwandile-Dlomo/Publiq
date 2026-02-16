@@ -25,7 +25,7 @@
 - [ ] Video Upload & Storage
 - [ ] Publish to YouTube (Data API v3)
 - [ ] Post Scheduling
-- [ ] Stripe Subscription Integration
+- [ ] PayFast Subscription Integration
 - [ ] Basic Analytics
 
 ### Phase 2: Platform Expansion
