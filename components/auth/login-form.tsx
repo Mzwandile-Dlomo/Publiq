@@ -48,7 +48,7 @@ export function LoginForm() {
     }
 
     return (
-        <Card className="w-full max-w-sm rounded-3xl border border-white/70 bg-white/85 shadow-sm">
+        <Card className="w-full max-w-sm rounded-3xl border border-border bg-card shadow-sm">
             <CardHeader>
                 <CardTitle className="text-2xl">Login</CardTitle>
                 <CardDescription>

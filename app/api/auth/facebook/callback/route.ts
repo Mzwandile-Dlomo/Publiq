@@ -7,64 +7,30 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const error = searchParams.get("error");
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (error) {
-        return NextResponse.redirect(new URL("/auth/login?error=meta_access_denied", request.url));
+        return NextResponse.redirect(new URL("/auth/login?error=meta_access_denied", baseUrl));
     }
 
     if (!code) {
-        return NextResponse.redirect(new URL("/auth/login?error=no_code", request.url));
+        return NextResponse.redirect(new URL("/auth/login?error=no_code", baseUrl));
     }
 
     try {
         // 1. Exchange code
         const tokenData = await exchangeMetaCodeForToken(code);
         const accessToken = tokenData.access_token;
-        const expiresIn = tokenData.expires_in; // seconds
 
         // 2. Get User Info
-        const userInfo = await getMetaUserInfo(accessToken); // { id, name, email }
+        const userInfo = await getMetaUserInfo(accessToken);
 
         // 3. Get Pages & Instagram Accounts
         const pages = await getFacebookPages(accessToken);
 
-        // Strategy:
-        // We link the "Main" Facebook user account to the Publiq User.
-        // But for publishing, we need to know which Page/IG account to use.
-        // For MVP: We will store the User Access Token as the primary "facebook" connection.
-        // And we will ALSO store "instagram" connection if we find a linked IG account.
-        // Actually, we need to publish to a specific PAGE.
-
-        // Simplified approach:
-        // 1. Find/Create User based on FB ID or Session.
-        // 2. Store "facebook" SocialAccount with the User Access Token.
-        // 3. Loop through pages, if there is a linked "instagram_business_account", store that as "instagram" SocialAccount (using the PAGE token, or user token + page ID? Usually Page Token is best for automation).
-        // Wait, for IG Graph API, we act AS the Page. So we need the Page Access Token.
-
-        // Let's store:
-        // - One "facebook_user" account? Or just rely on re-fetching pages?
-        // - To publish to FB, we need to let user SELECT which page.
-        // - To publish to IG, we need to let user SELECT which IG account.
-
-        // Complexity: Multiple Pages/IG accounts.
-        // MVP: Just pick the FIRST Page and FIRST IG account found? Or store all?
-        // Our schema has unique [provider, providerId].
-        // We can store multiple entries.
-        // provider="facebook", providerId="page_id_1"
-        // provider="facebook", providerId="page_id_2"
-        // provider="instagram", providerId="ig_id_1"
-
-        // Let's do this:
-        // 1. Identify current Publiq User.
+        // Identify current Publiq User
         const session = await verifySession();
         let userId = session?.userId as string | undefined;
-
-        // Check if FB user already linked (to find user if not logged in)
-        // We use userInfo.id as a lookup, but that's the User ID, not Page ID.
-        // Maybe we store a "facebook_user" record for login purposes?
-        // Let's stick to the pattern:
-        // If logged in -> Link.
-        // If not -> Try to find user by email (FB provides email).
 
         if (!userId) {
             if (userInfo.email) {
@@ -85,72 +51,72 @@ export async function GET(request: Request) {
             userId = newUser.id;
         }
 
-        // Link Accounts
+        // Remove any old facebook connection for this user (user-level or previous page)
+        await prisma.socialAccount.deleteMany({
+            where: { userId, provider: "facebook" }
+        });
 
-        // 1. Facebook User (Optional, mostly for Auth)
-        // await prisma.socialAccount.create(...) // Maybe not needed if we focus on Pages.
-
-        // 2. Iterate Pages
         if (pages && pages.length > 0) {
-            for (const page of pages) {
-                // Store Facebook Page
-                await prisma.socialAccount.upsert({
-                    where: {
-                        provider_providerId: {
-                            provider: "facebook",
-                            providerId: page.id
-                        }
-                    },
-                    update: {
-                        accessToken: page.access_token, // Page Token
-                        name: page.name,
-                        userId: userId,
-                    },
-                    create: {
-                        provider: "facebook",
-                        providerId: page.id,
-                        userId: userId,
-                        accessToken: page.access_token,
-                        firstName: page.name, // Store page name
-                        avatarUrl: `https://graph.facebook.com/${page.id}/picture`,
-                    }
-                });
+            // Store the first Page as the "facebook" connection (needed for publishing)
+            const page = pages[0];
+            await prisma.socialAccount.create({
+                data: {
+                    provider: "facebook",
+                    providerId: page.id,
+                    userId: userId,
+                    accessToken: page.access_token,
+                    firstName: page.name,
+                    name: page.name,
+                    email: userInfo.email,
+                    avatarUrl: `https://graph.facebook.com/${page.id}/picture`,
+                }
+            });
 
-                // Check for Instagram
-                if (page.instagram_business_account) {
+            // Store Instagram business accounts if linked to any page
+            for (const p of pages) {
+                if (p.instagram_business_account) {
                     await prisma.socialAccount.upsert({
                         where: {
                             provider_providerId: {
                                 provider: "instagram",
-                                providerId: page.instagram_business_account.id
+                                providerId: p.instagram_business_account.id
                             }
                         },
                         update: {
-                            accessToken: page.access_token, // IG uses the PAGE access token
+                            accessToken: p.access_token,
                             userId: userId,
-                            // We might need to fetch IG details (username) separately or just store ID
                         },
                         create: {
                             provider: "instagram",
-                            providerId: page.instagram_business_account.id,
+                            providerId: p.instagram_business_account.id,
                             userId: userId,
-                            accessToken: page.access_token, // IG acts as Page
-                            firstName: "Instagram Business", // We should fetch real name ideally
-                            avatarUrl: "", // Need fetch
+                            accessToken: p.access_token,
+                            firstName: "Instagram Business",
+                            avatarUrl: "",
                         }
                     });
                 }
             }
         } else {
-            // User has no pages?
-            return NextResponse.redirect(new URL("/dashboard?error=no_facebook_pages", request.url));
+            // No pages — store user account for connection display (publishing won't work)
+            await prisma.socialAccount.create({
+                data: {
+                    provider: "facebook",
+                    providerId: userInfo.id,
+                    userId: userId,
+                    accessToken: accessToken,
+                    firstName: userInfo.name,
+                    email: userInfo.email,
+                    avatarUrl: userInfo.picture?.data?.url || `https://graph.facebook.com/${userInfo.id}/picture`,
+                }
+            });
         }
 
         await createSession(userId);
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.redirect(new URL("/dashboard", baseUrl));
 
     } catch (error) {
         console.error("Meta Callback Error:", error);
-        return NextResponse.redirect(new URL("/auth/login?error=meta_callback_failed", request.url));
+        return NextResponse.redirect(new URL("/auth/login?error=meta_callback_failed", baseUrl));
     }
 }
