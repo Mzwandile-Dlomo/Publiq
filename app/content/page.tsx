@@ -22,7 +22,8 @@ export default async function ContentPage() {
         id: item.id,
         title: item.title,
         description: item.description,
-        videoUrl: item.videoUrl,
+        mediaUrl: item.mediaUrl,
+        mediaType: item.mediaType,
         status: item.status,
         scheduledAt: item.scheduledAt?.toISOString() ?? null,
         createdAt: item.createdAt.toISOString(),
@@ -49,7 +50,7 @@ export default async function ContentPage() {
                     </p>
                     <div className="mt-6">
                         <Link href="/upload">
-                            <Button className="rounded-full">Upload new video</Button>
+                            <Button className="rounded-full">Upload new content</Button>
                         </Link>
                     </div>
                 </div>

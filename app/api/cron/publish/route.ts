@@ -54,7 +54,8 @@ export async function GET(req: Request) {
                     const publisher = getPublisher(platform);
                     const result = await publisher.publish(content.userId, {
                         id: content.id,
-                        videoUrl: content.videoUrl,
+                        mediaUrl: content.mediaUrl,
+                        mediaType: content.mediaType as "video" | "image",
                         title: content.title,
                         description: content.description,
                     });

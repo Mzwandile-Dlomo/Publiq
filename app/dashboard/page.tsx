@@ -57,7 +57,7 @@ export default async function DashboardPage() {
                     </p>
                     <div className="mt-6 flex items-center justify-center gap-3">
                         <Link href="/upload">
-                            <Button className="rounded-full">Upload new video</Button>
+                            <Button className="rounded-full">Upload new content</Button>
                         </Link>
                         <Link href="/pricing">
                             <Button variant="outline" className="rounded-full">Upgrade Plan</Button>

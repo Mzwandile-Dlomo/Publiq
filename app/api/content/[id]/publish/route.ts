@@ -56,7 +56,8 @@ export async function POST(
             const publisher = getPublisher(platform);
             const result = await publisher.publish(session.userId as string, {
                 id: content.id,
-                videoUrl: content.videoUrl,
+                mediaUrl: content.mediaUrl,
+                mediaType: content.mediaType as "video" | "image",
                 title: content.title,
                 description: content.description,
             });

@@ -10,7 +10,8 @@ type ContentItem = {
     id: string;
     title: string;
     description: string | null;
-    videoUrl: string;
+    mediaUrl: string;
+    mediaType: string;
     status: string;
     scheduledAt: string | null;
     createdAt: string;

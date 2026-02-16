@@ -7,7 +7,8 @@ import { PLATFORMS } from "@/lib/platforms";
 const contentSchema = z.object({
     title: z.string().min(1),
     description: z.string().optional(),
-    videoUrl: z.string().url(),
+    mediaUrl: z.string().url(),
+    mediaType: z.enum(["video", "image"]).default("video"),
     thumbnailUrl: z.string().url().optional(),
     scheduledAt: z.string().optional(),
     status: z.enum(["draft", "scheduled"]).optional(),
@@ -22,14 +23,15 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { title, description, videoUrl, thumbnailUrl, platforms } = contentSchema.parse(body);
+        const { title, description, mediaUrl, mediaType, thumbnailUrl, platforms } = contentSchema.parse(body);
 
         const content = await prisma.content.create({
             data: {
                 userId: session.userId as string,
                 title,
                 description,
-                videoUrl,
+                mediaUrl,
+                mediaType,
                 thumbnailUrl,
                 status: body.status || "draft",
                 scheduledAt: body.scheduledAt,
