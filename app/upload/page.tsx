@@ -10,16 +10,21 @@ export default async function UploadPage() {
     }
 
     return (
-        <div className="bg-aurora bg-noise min-h-screen">
+        <div className="min-h-screen">
             <div className="mx-auto max-w-6xl px-6 py-8">
-                <div className="mx-auto w-full max-w-3xl rounded-3xl border border-white/70 bg-white/85 p-8 text-center shadow-sm">
-                    <h1 className="text-3xl font-semibold">Upload Content</h1>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Drop a file, set your details, and schedule your release.
-                    </p>
-                    <div className="mt-6 mx-auto max-w-xl">
-                        <UploadFlow />
+                <div className="text-center">
+                    <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Upload
                     </div>
+                    <h1 className="font-display mt-3 text-4xl">
+                        Drop it, detail it, release it.
+                    </h1>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Add a file, set your details, and schedule your release.
+                    </p>
+                </div>
+                <div className="mt-12 mx-auto max-w-xl">
+                    <UploadFlow />
                 </div>
             </div>
         </div>
