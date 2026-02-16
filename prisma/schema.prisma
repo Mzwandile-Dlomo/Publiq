@@ -47,7 +47,8 @@ model Content {
   userId      String
   title       String
   description String?
-  videoUrl    String
+  mediaUrl    String
+  mediaType   String   @default("video") // "video" or "image"
   thumbnailUrl String?
   status      String   @default("draft") // "draft", "scheduled", "published"
   scheduledAt DateTime?
