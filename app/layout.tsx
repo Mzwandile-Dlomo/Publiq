@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist_Mono, Sora } from "next/font/google";
 import "./globals.css";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
@@ -7,6 +7,7 @@ import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/navbar";
 import { BottomNav } from "@/components/dashboard/bottom-nav";
+import { PWARegister } from "@/components/pwa-register";
 
 const sora = Sora({
   variable: "--font-sora",
@@ -23,12 +24,22 @@ const fraunces = Fraunces({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#000000",
+};
+
 export const metadata: Metadata = {
   title: "Publiq",
-  description: "",
+  description: "Publish everywhere — schedule and distribute content across platforms.",
+  manifest: "/manifest.json",
   icons: {
     icon: "/publiq.png",
     apple: "/publiq.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Publiq",
   },
 };
 
@@ -51,6 +62,7 @@ export default function RootLayout({
           <BottomNav />
         </div>
         <Toaster />
+        <PWARegister />
       </body>
     </html>
   );
