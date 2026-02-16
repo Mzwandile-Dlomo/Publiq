@@ -69,7 +69,7 @@ export function PricingCards() {
     return (
         <div className="flex justify-center">
             {PLANS.map((plan) => (
-                <Card key={plan.name} className="w-full max-w-2xl rounded-3xl border border-white/70 bg-white/90 shadow-md">
+                <Card key={plan.name} className="w-full max-w-2xl rounded-3xl border border-border bg-card shadow-md">
                     <div className="grid gap-6 p-6 md:grid-cols-[1.1fr_0.9fr] md:items-center">
                         <div className="space-y-4">
                             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">

@@ -2,7 +2,7 @@ import { PricingCards } from "@/components/pricing/pricing-cards";
 
 export default async function PricingPage() {
     return (
-        <div className="bg-aurora bg-noise min-h-screen">
+        <div className="min-h-screen">
             <div className="mx-auto max-w-6xl px-6 py-8">
                 <div className="text-center">
                     <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
