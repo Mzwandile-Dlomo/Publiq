@@ -18,6 +18,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PlatformSelector } from "@/components/platforms/platform-selector";
 import type { Platform } from "@/lib/platforms";
+import { platformConfigs } from "@/lib/platforms";
+import type { MediaType } from "@/lib/platforms/types";
 
 const metadataSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -30,9 +32,10 @@ interface PublishFormProps {
     fileUrl: string;
     fileKey: string;
     fileName: string;
+    mediaType: MediaType;
 }
 
-export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
+export function PublishForm({ fileUrl, fileKey, fileName, mediaType }: PublishFormProps) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
@@ -63,7 +66,8 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
                 body: JSON.stringify({
                     title: data.title,
                     description: data.description,
-                    videoUrl: fileUrl,
+                    mediaUrl: fileUrl,
+                    mediaType,
                     scheduledAt: date,
                     status,
                     platforms: selectedPlatforms,
@@ -76,7 +80,7 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
             setContentId(json.content.id);
 
             if (status === 'scheduled') {
-                toast.success(`Video scheduled for ${date?.toLocaleString()}`);
+                toast.success(`Content scheduled for ${date?.toLocaleString()}`);
                 router.push("/dashboard");
             } else {
                 toast.success("Draft saved successfully!");
@@ -147,7 +151,7 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
             }
             router.push("/dashboard");
         } catch (error: any) {
-            toast.error(error.message || "Error publishing video");
+            toast.error(error.message || "Error publishing content");
         } finally {
             setIsPublishing(false);
         }
@@ -158,8 +162,8 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Video Details</CardTitle>
-                <CardDescription>Enter details for your video before publishing.</CardDescription>
+                <CardTitle>Content Details</CardTitle>
+                <CardDescription>Enter details for your {mediaType} before publishing.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
@@ -178,6 +182,7 @@ export function PublishForm({ fileUrl, fileKey, fileName }: PublishFormProps) {
                         <PlatformSelector
                             selected={selectedPlatforms}
                             onChange={setSelectedPlatforms}
+                            mediaType={mediaType}
                         />
                         {selectedPlatforms.length === 0 && (
                             <p className="text-xs text-muted-foreground">Select at least one platform to publish to.</p>

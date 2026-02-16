@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getAllPlatforms, type Platform } from "@/lib/platforms";
+import { getAllPlatforms, type Platform, type MediaType } from "@/lib/platforms";
 import { Youtube, Music2, Instagram, Facebook, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,9 +19,10 @@ interface ConnectedAccount {
 interface PlatformSelectorProps {
     selected: Platform[];
     onChange: (platforms: Platform[]) => void;
+    mediaType?: MediaType;
 }
 
-export function PlatformSelector({ selected, onChange }: PlatformSelectorProps) {
+export function PlatformSelector({ selected, onChange, mediaType }: PlatformSelectorProps) {
     const platforms = getAllPlatforms();
     const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
@@ -70,7 +71,8 @@ export function PlatformSelector({ selected, onChange }: PlatformSelectorProps) 
                 const Icon = iconMap[platform.icon] || Youtube;
                 const isConnected = connectedProviders.includes(platform.id);
                 const isSelected = selected.includes(platform.id);
-                const isDisabled = !platform.available || !isConnected;
+                const supportsMediaType = !mediaType || platform.supportedMediaTypes.includes(mediaType);
+                const isDisabled = !platform.available || !isConnected || !supportsMediaType;
 
                 return (
                     <button

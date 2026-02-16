@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { UploadVideo } from "./upload-video";
+import { UploadMedia } from "./upload-media";
 import { PublishForm } from "./publish-form";
+import type { MediaType } from "@/lib/platforms/types";
 
 export function UploadFlow() {
     const [step, setStep] = useState<"upload" | "publish">("upload");
-    const [fileData, setFileData] = useState<{ url: string; key: string; name: string } | null>(null);
+    const [fileData, setFileData] = useState<{ url: string; key: string; name: string; mediaType: MediaType } | null>(null);
 
-    const handleUploadComplete = (url: string, key: string, name: string) => {
-        setFileData({ url, key, name });
+    const handleUploadComplete = (url: string, key: string, name: string, mediaType: MediaType) => {
+        setFileData({ url, key, name, mediaType });
         setStep("publish");
     };
 
@@ -19,9 +20,10 @@ export function UploadFlow() {
                 fileUrl={fileData.url}
                 fileKey={fileData.key}
                 fileName={fileData.name}
+                mediaType={fileData.mediaType}
             />
         );
     }
 
-    return <UploadVideo onUploadComplete={handleUploadComplete} />;
+    return <UploadMedia onUploadComplete={handleUploadComplete} />;
 }
