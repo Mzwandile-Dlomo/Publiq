@@ -6,9 +6,15 @@ export const instagramPublisher: PlatformPublisher = {
     platform: "instagram",
 
     async publish(userId, content) {
-        const account = await prisma.socialAccount.findFirst({
-            where: { userId, provider: "instagram" }
-        });
+        const account = content.socialAccountId
+            ? await prisma.socialAccount.findFirst({
+                where: { id: content.socialAccountId, userId, provider: "instagram" },
+            })
+            : await prisma.socialAccount.findFirst({
+                where: { userId, provider: "instagram", isDefault: true },
+            }) || await prisma.socialAccount.findFirst({
+                where: { userId, provider: "instagram" },
+            });
 
         if (!account) throw new Error("No Instagram Business account connected");
 
@@ -28,17 +34,17 @@ export const instagramPublisher: PlatformPublisher = {
 export const instagramStatsProvider: PlatformStatsProvider = {
     platform: "instagram",
 
-    async getStats(userId, platformPostIds) {
+    async getStats(userId, posts) {
         const account = await prisma.socialAccount.findFirst({
             where: { userId, provider: "instagram" },
         });
 
-        if (!account || platformPostIds.length === 0) return {};
+        if (!account || posts.length === 0) return {};
 
         const statsMap: Record<string, import("./types").VideoStats> = {};
 
         await Promise.all(
-            platformPostIds.map(async (postId) => {
+            posts.map(async ({ postId }) => {
                 try {
                     const url = `https://graph.facebook.com/v19.0/${postId}?fields=like_count,comments_count&access_token=${account.accessToken}`;
                     const response = await fetch(url);

@@ -6,9 +6,15 @@ export const facebookPublisher: PlatformPublisher = {
     platform: "facebook",
 
     async publish(userId, content) {
-        const account = await prisma.socialAccount.findFirst({
-            where: { userId, provider: "facebook" }
-        });
+        const account = content.socialAccountId
+            ? await prisma.socialAccount.findFirst({
+                where: { id: content.socialAccountId, userId, provider: "facebook" },
+            })
+            : await prisma.socialAccount.findFirst({
+                where: { userId, provider: "facebook", isDefault: true },
+            }) || await prisma.socialAccount.findFirst({
+                where: { userId, provider: "facebook" },
+            });
 
         if (!account) throw new Error("No Facebook Page connected");
 
@@ -28,19 +34,31 @@ export const facebookPublisher: PlatformPublisher = {
 export const facebookStatsProvider: PlatformStatsProvider = {
     platform: "facebook",
 
-    async getStats(userId, platformPostIds) {
-        const account = await prisma.socialAccount.findFirst({
+    async getStats(userId, posts) {
+        if (posts.length === 0) return {};
+
+        const accounts = await prisma.socialAccount.findMany({
             where: { userId, provider: "facebook" },
         });
 
-        if (!account || platformPostIds.length === 0) return {};
+        if (accounts.length === 0) return {};
+
+        const accountById = new Map(accounts.map((acc) => [acc.id, acc]));
+        const defaultAccount = accounts.find((acc) => acc.isDefault) || accounts[0];
 
         const statsMap: Record<string, import("./types").VideoStats> = {};
-        const pageId = account.providerId;
 
         await Promise.all(
-            platformPostIds.map(async (postId) => {
+            posts.map(async ({ postId, socialAccountId }) => {
                 try {
+                    const account = socialAccountId
+                        ? accountById.get(socialAccountId) || defaultAccount
+                        : defaultAccount;
+
+                    if (!account) return;
+
+                    const pageId = account.providerId;
+
                     // Determine the queryable ID — if it's a raw object ID (no underscore),
                     // construct the page post ID format: {pageId}_{objectId}
                     const queryId = postId.includes("_")

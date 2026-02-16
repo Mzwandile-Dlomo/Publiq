@@ -12,9 +12,15 @@ export const youtubePublisher: PlatformPublisher = {
             throw new Error("YouTube does not support image posts");
         }
 
-        const socialAccount = await prisma.socialAccount.findFirst({
-            where: { userId, provider: "youtube" },
-        });
+        const socialAccount = content.socialAccountId
+            ? await prisma.socialAccount.findFirst({
+                where: { id: content.socialAccountId, userId, provider: "youtube" },
+            })
+            : await prisma.socialAccount.findFirst({
+                where: { userId, provider: "youtube", isDefault: true },
+            }) || await prisma.socialAccount.findFirst({
+                where: { userId, provider: "youtube" },
+            });
 
         if (!socialAccount) {
             throw new Error("No YouTube account connected");
@@ -61,7 +67,7 @@ export const youtubePublisher: PlatformPublisher = {
 export const youtubeStatsProvider: PlatformStatsProvider = {
     platform: "youtube",
 
-    async getStats(userId, platformPostIds) {
+    async getStats(userId, posts) {
         const socialAccount = await prisma.socialAccount.findFirst({
             where: { userId, provider: "youtube" },
         });
@@ -78,9 +84,10 @@ export const youtubeStatsProvider: PlatformStatsProvider = {
 
         const youtube = google.youtube({ version: "v3", auth: oauth2Client });
 
+        const postIds = posts.map((p) => p.postId);
         const res = await youtube.videos.list({
             part: ["statistics"],
-            id: platformPostIds,
+            id: postIds,
         });
 
         const statsMap: Record<string, VideoStats> = {};

@@ -8,6 +8,7 @@ export interface PublishableContent {
     mediaType: MediaType;
     title: string;
     description: string | null;
+    socialAccountId?: string | null;
 }
 
 export interface PublishResult {
@@ -28,5 +29,8 @@ export interface PlatformPublisher {
 
 export interface PlatformStatsProvider {
     platform: Platform;
-    getStats(userId: string, platformPostIds: string[]): Promise<Record<string, VideoStats>>;
+    getStats(
+        userId: string,
+        posts: { postId: string; socialAccountId?: string | null }[]
+    ): Promise<Record<string, VideoStats>>;
 }
