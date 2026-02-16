@@ -1,9 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { PlatformConfig } from "@/lib/platforms";
-import { Youtube, Music2, Instagram, Facebook, Check, Lock } from "lucide-react";
-import Link from "next/link";
+import { Youtube, Music2, Instagram, Facebook, Check, Lock, Loader2 } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     Youtube,
@@ -24,15 +24,16 @@ interface SocialAccount {
 interface PlatformCardProps {
     platform: PlatformConfig;
     account: SocialAccount | null;
+    onDisconnect?: (provider: string) => void;
 }
 
-export function PlatformCard({ platform, account }: PlatformCardProps) {
+export function PlatformCard({ platform, account, onDisconnect }: PlatformCardProps) {
     const Icon = iconMap[platform.icon] || Youtube;
     const isConnected = !!account;
 
     if (!platform.available) {
         return (
-            <div className="flex items-center justify-between rounded-2xl border border-border bg-white/60 px-4 py-4 opacity-60">
+            <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-4 opacity-60">
                 <div className="flex items-center gap-3">
                     <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${platform.bgColor}`}>
                         <Icon className={`h-5 w-5 ${platform.color}`} />
@@ -66,6 +67,16 @@ export function PlatformCard({ platform, account }: PlatformCardProps) {
                         <div className="text-xs text-muted-foreground">{accountLabel}</div>
                     </div>
                 </div>
+                {onDisconnect && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="rounded-full text-muted-foreground hover:text-destructive"
+                        onClick={() => onDisconnect(platform.id)}
+                    >
+                        Disconnect
+                    </Button>
+                )}
             </div>
         );
     }
@@ -81,11 +92,11 @@ export function PlatformCard({ platform, account }: PlatformCardProps) {
                     <div className="text-xs text-muted-foreground">{platform.description}</div>
                 </div>
             </div>
-            <Link href={platform.connectUrl}>
+            <a href={platform.connectUrl}>
                 <Button variant="outline" size="sm" className="rounded-full">
                     Connect
                 </Button>
-            </Link>
+            </a>
         </div>
     );
 }
