@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PlatformConnections } from "@/components/platforms/platform-connections";
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 export default async function SettingsPage() {
     const session = await verifySession();
@@ -40,7 +41,7 @@ export default async function SettingsPage() {
                 </div>
 
                 <div className="mt-12 grid gap-6 md:grid-cols-2">
-                    <div className="rounded-2xl border border-border p-6">
+                    <div className="flex flex-col rounded-2xl border border-border p-6">
                         <h2 className="text-xl font-semibold">Profile</h2>
                         <p className="mt-1 text-xs text-muted-foreground">
                             Your display name and login email.
@@ -63,9 +64,62 @@ export default async function SettingsPage() {
                                 <span className="font-semibold capitalize">{planName}</span>
                             </div>
                         </div>
+
+                        <div className="mt-auto pt-6">
+                            <div className="rounded-2xl border border-border p-5">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-semibold">Plan</p>
+                                            <span className="rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold capitalize text-primary">
+                                                {planName}
+                                            </span>
+                                        </div>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {planName === "free"
+                                                ? "Upgrade to unlock unlimited uploads and all platforms."
+                                                : "You have full access to all features."}
+                                        </p>
+                                    </div>
+                                    {planName === "free" ? (
+                                        <Link href="/pricing">
+                                            <Button size="sm" className="rounded-full gap-2">
+                                                <Sparkles className="h-3.5 w-3.5" />
+                                                Upgrade
+                                            </Button>
+                                        </Link>
+                                    ) : (
+                                        <Button size="sm" variant="outline" className="rounded-full">
+                                            Manage
+                                        </Button>
+                                    )}
+                                </div>
+
+                                {planName === "free" && (
+                                    <ul className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                                        <li className="flex items-center gap-2">
+                                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                            Unlimited uploads
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                            All platforms
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                            Advanced scheduling
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                            Priority support
+                                        </li>
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="flex flex-col gap-6">
                         <div className="rounded-2xl border border-border p-6">
                             <h2 className="text-xl font-semibold">Connected Accounts</h2>
                             <p className="mt-1 text-xs text-muted-foreground">
@@ -97,59 +151,7 @@ export default async function SettingsPage() {
                     </div>
                 </div>
 
-                <div className="mt-6 rounded-2xl border border-border p-6">
-                    <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-xl font-semibold">Plan</h2>
-                                <span className="rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold capitalize text-primary">
-                                    {planName}
-                                </span>
-                            </div>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                {planName === "free"
-                                    ? "You're on the free plan. Upgrade to unlock unlimited uploads and all platforms."
-                                    : "You have full access to all features."}
-                            </p>
-                        </div>
-                        {planName === "free" ? (
-                            <Link href="/pricing">
-                                <Button className="rounded-full gap-2">
-                                    <Sparkles className="h-4 w-4" />
-                                    Upgrade to Pro
-                                </Button>
-                            </Link>
-                        ) : (
-                            <Button variant="outline" className="rounded-full">
-                                Manage subscription
-                            </Button>
-                        )}
-                    </div>
-
-                    {planName === "free" && (
-                        <div className="mt-6 rounded-2xl border border-border p-5">
-                            <p className="text-sm font-semibold">Pro includes</p>
-                            <ul className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500" />
-                                    Unlimited uploads
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500" />
-                                    All platforms
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500" />
-                                    Advanced scheduling
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Check className="h-4 w-4 text-emerald-500" />
-                                    Priority support
-                                </li>
-                            </ul>
-                        </div>
-                    )}
-                </div>
+                <SiteFooter />
             </div>
         </div>
     );

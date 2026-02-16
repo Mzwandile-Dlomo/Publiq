@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 export default async function ContentPage({
     searchParams,
 }: {
-    searchParams: { filter?: string };
+    searchParams: Promise<{ filter?: string }>;
 }) {
     const session = await verifySession();
+    const { filter } = await searchParams;
 
     if (!session) {
         redirect("/auth/login");
@@ -65,7 +66,7 @@ export default async function ContentPage({
                 </div>
 
                 <div className="mt-12">
-                    <ContentList items={serialized} initialFilter={searchParams.filter} />
+                    <ContentList items={serialized} initialFilter={filter} />
                 </div>
             </div>
         </div>
