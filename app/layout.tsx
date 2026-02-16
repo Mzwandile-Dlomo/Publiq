@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist_Mono, Sora } from "next/font/google";
 import "./globals.css";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { Toaster } from "@/components/ui/sonner";
+import { Navbar } from "@/components/navbar";
+import { BottomNav } from "@/components/dashboard/bottom-nav";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
 });
 
@@ -16,9 +18,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "Publiq",
   description: "",
+  icons: {
+    icon: "/publiq.png",
+    apple: "/publiq.png",
+  },
 };
 
 export default function RootLayout({
@@ -29,18 +40,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${sora.variable} ${geistMono.variable} ${fraunces.variable} antialiased`}
       >
         <NextSSRPlugin
-          /**
-           * The `extractRouterConfig` will extract the routerConfig from the
-           * router to prevent additional information from being leaked to the client. The
-           * data passed to the client is the same as if you passed the `router` to
-           * `createUploadthing` directly.
-           */
           routerConfig={extractRouterConfig(ourFileRouter)}
         />
+        <Navbar />
         {children}
+        <div className="md:hidden">
+          <BottomNav />
+        </div>
         <Toaster />
       </body>
     </html>

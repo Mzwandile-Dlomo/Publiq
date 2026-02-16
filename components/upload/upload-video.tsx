@@ -15,7 +15,7 @@ export function UploadVideo({ onUploadComplete }: UploadVideoProps) {
             <CardHeader>
                 <CardTitle>Upload Video</CardTitle>
                 <CardDescription>
-                    Drag 'n' drop some files here, or click to select files
+                    Drag &apos;n&apos; drop some files here, or click to select files
                 </CardDescription>
             </CardHeader>
             <CardContent>

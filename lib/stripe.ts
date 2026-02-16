@@ -1,6 +1,12 @@
 import Stripe from "stripe";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-01-27.acacia" as any, // Cast to any to bypass strict type check if needed
+const key = process.env.STRIPE_SECRET_KEY;
+if (!key) {
+    console.warn("STRIPE_SECRET_KEY is not set — Stripe calls will fail at runtime.");
+}
+
+export const stripe = new Stripe(key || "sk_placeholder_not_set", {
+    // @ts-expect-error - Stripe SDK type may not include this API version yet
+    apiVersion: "2025-01-27.acacia",
     typescript: true,
 });

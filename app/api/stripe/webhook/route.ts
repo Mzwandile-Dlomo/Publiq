@@ -16,8 +16,8 @@ export async function POST(req: Request) {
             signature,
             process.env.STRIPE_WEBHOOK_SECRET!
         );
-    } catch (error: any) {
-        console.error("Webhook signature verification failed.", error.message);
+    } catch (error) {
+        console.error("Webhook signature verification failed.", error instanceof Error ? error.message : error);
         return NextResponse.json({ error: "Webhook Error" }, { status: 400 });
     }
 
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
                 // Continue to provision the subscription as payments continue to be made.
                 // Store the status in your database and check when a user accesses your service.
                 // This approach helps you avoid hitting Stripe limits.
-                const invoice = event.data.object as any;
+                const invoice = event.data.object as { subscription?: string };
                 const subscriptionId = invoice.subscription as string;
 
                 // Find subscription by stripeSubscriptionId
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
             default:
                 console.log(`Unhandled event type ${event.type}`);
         }
-    } catch (error: any) {
+    } catch (error) {
         console.error("Stripe Webhook Handler Error:", error);
         return NextResponse.json({ error: "Webhook Handler Error" }, { status: 500 });
     }

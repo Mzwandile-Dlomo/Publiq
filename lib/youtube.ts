@@ -3,6 +3,26 @@ import { oauth2Client } from "./google";
 import { prisma } from "./prisma";
 import { Readable } from "stream";
 
+export async function deleteFromYouTube(userId: string, videoId: string) {
+    const socialAccount = await prisma.socialAccount.findFirst({
+        where: { userId, provider: "youtube" },
+    });
+
+    if (!socialAccount) {
+        throw new Error("No YouTube account connected");
+    }
+
+    oauth2Client.setCredentials({
+        access_token: socialAccount.accessToken,
+        refresh_token: socialAccount.refreshToken,
+        expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
+    });
+
+    const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+
+    await youtube.videos.delete({ id: videoId });
+}
+
 export async function getYouTubeVideoStats(
     userId: string,
     videoIds: string[]
@@ -88,9 +108,8 @@ export async function uploadToYouTube(
     }
 
     // Convert web stream to Node stream matches googleapis expectation
-    // @ts-ignore - Web streams and Node streams are slightly different types but often compatible in recent Node versions
-    // or we can use generic stream conversion.
-    const fileStream = Readable.fromWeb(response.body as any);
+    // @ts-expect-error - Web ReadableStream vs Node stream type mismatch
+    const fileStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
 
     // 4. Upload to YouTube
     try {

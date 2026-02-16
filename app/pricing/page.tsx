@@ -1,22 +1,22 @@
 import { PricingCards } from "@/components/pricing/pricing-cards";
-import { verifySession } from "@/lib/auth";
-import { redirect } from "next/navigation";
 
 export default async function PricingPage() {
-    const session = await verifySession();
-
-    // Optional: Redirect if already subscribed? 
-    // For now, just show the cards.
-
     return (
-        <div className="container mx-auto py-20">
-            <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
-                <p className="text-xl text-muted-foreground">
-                    Choose the plan that's right for you.
-                </p>
+        <div className="min-h-screen">
+            <div className="mx-auto max-w-6xl px-6 py-8">
+                <div className="text-center">
+                    <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Pricing
+                    </div>
+                    <h1 className="font-display mt-3 text-4xl">Simple plans that scale with you.</h1>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Launch for free and upgrade when your publishing cadence grows.
+                    </p>
+                </div>
+                <div className="mt-12">
+                    <PricingCards />
+                </div>
             </div>
-            <PricingCards />
         </div>
     );
 }

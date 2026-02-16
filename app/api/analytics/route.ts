@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getYouTubeVideoStats } from "@/lib/youtube";
+import { PLATFORMS, type Platform } from "@/lib/platforms";
+import { getStatsProvider } from "@/lib/platforms/registry";
+import type { AnalyticsResponse, PlatformStats, TopContentItem } from "@/lib/analytics-types";
 
 export async function GET() {
     try {
@@ -12,62 +14,149 @@ export async function GET() {
 
         const userId = session.userId as string;
 
-        // Fetch published publications with YouTube video IDs
-        const publications = await prisma.publication.findMany({
-            where: {
-                content: { userId },
-                platform: "youtube",
-                status: "success",
-                platformPostId: { not: null },
-            },
+        type SocialAccountProvider = { provider: string };
+        type PublicationEntry = {
+            id: string;
+            platform: string;
+            platformPostId: string | null;
+            socialAccountId: string | null;
+        };
+        type TopPublication = {
+            id: string;
+            contentId: string;
+            platform: string;
+            views: number | null;
+            likes: number | null;
+            comments: number | null;
+            publishedAt: Date | null;
+            platformPostId: string | null;
+            content: { title: string };
+        };
+
+        // Get connected platforms
+        const socialAccounts: SocialAccountProvider[] = await prisma.socialAccount.findMany({
+            where: { userId },
+            select: { provider: true },
         });
+        const connectedPlatforms = socialAccounts.map((a: SocialAccountProvider) => a.provider);
 
-        // Sync stats from YouTube if there are published videos
-        const videoIds = publications
-            .map((p) => p.platformPostId)
-            .filter((id): id is string => id !== null);
-
-        if (videoIds.length > 0) {
-            try {
-                const statsMap = await getYouTubeVideoStats(userId, videoIds);
-
-                // Batch update publications with fresh stats
-                for (const pub of publications) {
-                    if (pub.platformPostId && statsMap[pub.platformPostId]) {
-                        const s = statsMap[pub.platformPostId];
-                        await prisma.publication.update({
-                            where: { id: pub.id },
-                            data: {
-                                views: s.views,
-                                likes: s.likes,
-                                comments: s.comments,
-                            },
-                        });
-                    }
-                }
-            } catch (syncError) {
-                // If YouTube sync fails, fall through to return cached DB stats
-                console.error("YouTube stats sync failed:", syncError);
-            }
+        if (connectedPlatforms.length === 0) {
+            const response: AnalyticsResponse = {
+                totals: { views: 0, likes: 0, comments: 0 },
+                platforms: {},
+                topContent: [],
+            };
+            return NextResponse.json(response);
         }
 
-        // Aggregate from DB (now updated with fresh stats)
-        const stats = await prisma.publication.aggregate({
+        // Fetch all successful publications for connected platforms only
+        const publications: PublicationEntry[] = await prisma.publication.findMany({
             where: {
                 content: { userId },
+                status: "success",
+                platformPostId: { not: null },
+                platform: { in: connectedPlatforms },
             },
-            _sum: {
-                views: true,
-                likes: true,
-                comments: true,
+            select: {
+                id: true,
+                platform: true,
+                platformPostId: true,
+                socialAccountId: true,
             },
         });
 
-        return NextResponse.json({
-            views: stats._sum.views || 0,
-            likes: stats._sum.likes || 0,
-            comments: stats._sum.comments || 0,
+        // Group post IDs by platform
+        const postIdsByPlatform = new Map<Platform, { pubId: string; postId: string; socialAccountId: string | null }[]>();
+        for (const pub of publications) {
+            const platform = pub.platform as Platform;
+            if (!PLATFORMS.includes(platform)) continue;
+            if (!pub.platformPostId) continue;
+
+            const list = postIdsByPlatform.get(platform) || [];
+            list.push({ pubId: pub.id, postId: pub.platformPostId, socialAccountId: pub.socialAccountId });
+            postIdsByPlatform.set(platform, list);
+        }
+
+        // Fetch stats from all platforms in parallel
+        const syncPromises = Array.from(postIdsByPlatform.entries()).map(
+            async ([platform, entries]) => {
+                try {
+                    const provider = getStatsProvider(platform);
+                    const statsMap = await provider.getStats(
+                        userId,
+                        entries.map((e) => ({ postId: e.postId, socialAccountId: e.socialAccountId }))
+                    );
+
+                    // Update publications with fresh stats
+                    for (const entry of entries) {
+                        const s = statsMap[entry.postId];
+                        if (s) {
+                            await prisma.publication.update({
+                                where: { id: entry.pubId },
+                                data: {
+                                    views: s.views,
+                                    likes: s.likes,
+                                    comments: s.comments,
+                                },
+                            });
+                        }
+                    }
+                } catch (syncError) {
+                    console.error(`${platform} stats sync failed:`, syncError);
+                }
+            }
+        );
+
+        await Promise.all(syncPromises);
+
+        // Per-platform breakdown (connected platforms only)
+        const platformGroups = await prisma.publication.groupBy({
+            by: ["platform"],
+            where: { content: { userId }, platform: { in: connectedPlatforms } },
+            _sum: { views: true, likes: true, comments: true },
+            _count: true,
         });
+
+        const platforms: Partial<Record<Platform, PlatformStats>> = {};
+        const totals = { views: 0, likes: 0, comments: 0 };
+
+        for (const group of platformGroups) {
+            const v = group._sum.views || 0;
+            const l = group._sum.likes || 0;
+            const c = group._sum.comments || 0;
+            platforms[group.platform as Platform] = {
+                views: v,
+                likes: l,
+                comments: c,
+                publicationCount: group._count,
+            };
+            totals.views += v;
+            totals.likes += l;
+            totals.comments += c;
+        }
+
+        // Top 5 performing publications by views (connected platforms only)
+        const topPubs: TopPublication[] = await prisma.publication.findMany({
+            where: { content: { userId }, status: "success", platform: { in: connectedPlatforms } },
+            orderBy: { views: "desc" },
+            take: 5,
+            include: { content: { select: { title: true } } },
+        });
+
+        const topContent: TopContentItem[] = topPubs.map((pub: TopPublication) => ({
+            publicationId: pub.id,
+            contentId: pub.contentId,
+            title: pub.content.title,
+            platform: pub.platform as Platform,
+            views: pub.views ?? 0,
+            likes: pub.likes ?? 0,
+            comments: pub.comments ?? 0,
+            publishedAt: pub.publishedAt?.toISOString() ?? null,
+            platformPostId: pub.platformPostId,
+        }));
+
+        const response: AnalyticsResponse = { totals, platforms, topContent };
+        return NextResponse.json(response);
     } catch (error) {
         console.error("Analytics Error:", error);
         return NextResponse.json(

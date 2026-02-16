@@ -2,14 +2,18 @@ import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { PLATFORMS } from "@/lib/platforms";
 
 const contentSchema = z.object({
     title: z.string().min(1),
     description: z.string().optional(),
-    videoUrl: z.string().url(),
+    mediaUrl: z.string().url(),
+    mediaType: z.enum(["video", "image"]).default("video"),
     thumbnailUrl: z.string().url().optional(),
-    scheduledAt: z.string().optional(), // Date passed as ISO string
+    scheduledAt: z.string().optional(),
     status: z.enum(["draft", "scheduled"]).optional(),
+    platforms: z.array(z.enum(PLATFORMS)).min(1, "Select at least one platform"),
+    platformAccounts: z.record(z.string(), z.string()).optional(),
 });
 
 export async function POST(req: Request) {
@@ -20,27 +24,66 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { title, description, videoUrl, thumbnailUrl } = contentSchema.parse(body);
+        const { title, description, mediaUrl, mediaType, thumbnailUrl, platforms, platformAccounts } = contentSchema.parse(body);
+
+        type SocialAccountRecord = { id: string; provider: string };
+
+        const accountIds = Object.values(platformAccounts || {}).filter(Boolean);
+        const accounts: SocialAccountRecord[] = accountIds.length > 0
+            ? await prisma.socialAccount.findMany({
+                where: {
+                    userId: session.userId as string,
+                    id: { in: accountIds },
+                },
+            })
+            : [];
+        const accountById = new Map(accounts.map((acc: SocialAccountRecord) => [acc.id, acc]));
+
+        const defaultAccounts: SocialAccountRecord[] = await prisma.socialAccount.findMany({
+            where: {
+                userId: session.userId as string,
+                provider: { in: platforms },
+                isDefault: true,
+            },
+        });
+        const defaultByProvider = new Map(defaultAccounts.map((acc: SocialAccountRecord) => [acc.provider, acc]));
+
+        for (const [platform, accountId] of Object.entries(platformAccounts || {})) {
+            if (!platforms.includes(platform as (typeof PLATFORMS)[number])) continue;
+            const account = accountById.get(accountId);
+            if (!account || account.provider !== platform) {
+                return NextResponse.json({ error: "Invalid platform account selection" }, { status: 400 });
+            }
+        }
 
         const content = await prisma.content.create({
             data: {
                 userId: session.userId as string,
                 title,
                 description,
-                videoUrl,
+                mediaUrl,
+                mediaType,
                 thumbnailUrl,
                 status: body.status || "draft",
                 scheduledAt: body.scheduledAt,
                 publications: {
-                    create: {
-                        platform: "youtube",
-                        status: "pending"
-                    }
-                }
+                    create: platforms.map((platform) => {
+                        const selectedAccountId = platformAccounts?.[platform];
+                        const resolvedAccountId = selectedAccountId
+                            ? accountById.get(selectedAccountId)?.id
+                            : defaultByProvider.get(platform)?.id;
+
+                        return {
+                            platform,
+                            status: "pending",
+                            socialAccountId: resolvedAccountId ?? null,
+                        };
+                    }),
+                },
             },
             include: {
-                publications: true
-            }
+                publications: true,
+            },
         });
 
         return NextResponse.json({ content });

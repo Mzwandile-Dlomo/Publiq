@@ -1,7 +1,7 @@
 import { UploadFlow } from "@/components/upload/upload-flow";
 import { verifySession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import { ContentNav } from "@/components/content/content-nav";
 
 export default async function UploadPage() {
     const session = await verifySession();
@@ -11,13 +11,23 @@ export default async function UploadPage() {
     }
 
     return (
-        <div className="container mx-auto py-10">
-            <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
-                &larr; Back to Dashboard
-            </Link>
-            <h1 className="text-3xl font-bold mb-6 mt-2">Upload Content</h1>
-            <div className="max-w-xl mx-auto">
-                <UploadFlow />
+        <div className="min-h-screen">
+            <ContentNav />
+            <div className="mx-auto max-w-6xl px-6 py-8">
+                <div className="text-center">
+                    <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Upload
+                    </div>
+                    <h1 className="font-display mt-3 text-4xl">
+                        Drop it, detail it, release it.
+                    </h1>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Add a file, set your details, and schedule your release.
+                    </p>
+                </div>
+                <div className="mt-12 mx-auto max-w-xl">
+                    <UploadFlow />
+                </div>
             </div>
         </div>
     );

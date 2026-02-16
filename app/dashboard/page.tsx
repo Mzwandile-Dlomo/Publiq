@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { DeleteContentButton } from "@/components/dashboard/delete-content-button";
-import { DashboardStats } from "@/components/analytics/dashboard-stats";
+import { Upload, Calendar, BarChart2, Settings, Eye, Heart } from "lucide-react";
 
 export default async function DashboardPage() {
     const session = await verifySession();
@@ -13,106 +12,155 @@ export default async function DashboardPage() {
         redirect("/auth/login");
     }
 
+    const userId = session.userId as string;
+
     const user = await prisma.user.findUnique({
-        where: { id: session.userId as string },
+        where: { id: userId },
         include: { socialAccounts: true },
     });
 
-    const contentItems = await prisma.content.findMany({
-        where: { userId: session.userId as string },
-        include: { publications: true },
-        orderBy: { createdAt: "desc" },
-    });
+    const [totalContent, scheduledCount, publishedCount, aggregates] = await Promise.all([
+        prisma.content.count({ where: { userId } }),
+        prisma.content.count({ where: { userId, status: "scheduled" } }),
+        prisma.content.count({ where: { userId, status: "published" } }),
+        prisma.publication.aggregate({
+            where: { content: { userId } },
+            _sum: { views: true, likes: true, comments: true },
+        }),
+    ]);
 
-    const youtubeAccount = user?.socialAccounts.find((acc) => acc.provider === "youtube");
+    const totalViews = aggregates._sum.views ?? 0;
+    const totalLikes = aggregates._sum.likes ?? 0;
+    const totalComments = aggregates._sum.comments ?? 0;
+
+    const displayName = user?.name || user?.email || "Creator";
+    const connectedCount = user?.socialAccounts.length ?? 0;
+
+    function formatNumber(n: number) {
+        if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+        if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+        return n.toString();
+    }
 
     return (
-        <div className="p-8 space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-                <p className="text-muted-foreground">Welcome, {user?.name || user?.email}</p>
-                <div className="mt-4 flex gap-4">
-                    <Link href="/upload">
-                        <Button>Upload New Video</Button>
+        <div className="min-h-screen">
+            <div className="mx-auto max-w-6xl px-6 py-8">
+                <div className="text-center">
+                    <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Dashboard
+                    </div>
+                    <h1 className="font-display mt-3 text-4xl">
+                        Welcome back, {displayName}.
+                    </h1>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Your queue is ready. Schedule, publish, and keep your cadence steady.
+                    </p>
+                    <div className="mt-6 flex items-center justify-center gap-3">
+                        <Link href="/upload">
+                            <Button className="rounded-full">Upload new content</Button>
+                        </Link>
+                        <Link href="/pricing">
+                            <Button variant="outline" className="rounded-full">Upgrade Plan</Button>
+                        </Link>
+                    </div>
+                </div>
+
+                <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="rounded-2xl border border-border p-4">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Upload className="h-4 w-4" />
+                            <span className="text-xs font-medium">Uploads</span>
+                        </div>
+                        <p className="mt-2 text-2xl font-semibold">{formatNumber(totalContent)}</p>
+                        <p className="text-xs text-muted-foreground">{publishedCount} published</p>
+                    </div>
+
+                    <div className="rounded-2xl border border-border p-4">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span className="text-xs font-medium">Scheduled</span>
+                        </div>
+                        <p className="mt-2 text-2xl font-semibold">{formatNumber(scheduledCount)}</p>
+                        <p className="text-xs text-muted-foreground">in your queue</p>
+                    </div>
+
+                    <div className="rounded-2xl border border-border p-4">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Eye className="h-4 w-4" />
+                            <span className="text-xs font-medium">Views</span>
+                        </div>
+                        <p className="mt-2 text-2xl font-semibold">{formatNumber(totalViews)}</p>
+                        <p className="text-xs text-muted-foreground">total across platforms</p>
+                    </div>
+
+                    <div className="rounded-2xl border border-border p-4">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Heart className="h-4 w-4" />
+                            <span className="text-xs font-medium">Engagement</span>
+                        </div>
+                        <p className="mt-2 text-2xl font-semibold">{formatNumber(totalLikes + totalComments)}</p>
+                        <p className="text-xs text-muted-foreground">{formatNumber(totalLikes)} likes · {formatNumber(totalComments)} comments</p>
+                    </div>
+                </div>
+
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                    <Link href="/schedule" className="group rounded-2xl border border-border p-5 transition-colors hover:border-primary/30">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                                <Calendar className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="font-semibold group-hover:text-primary transition-colors">Schedule</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {scheduledCount} upcoming release{scheduledCount === 1 ? "" : "s"}
+                                </p>
+                            </div>
+                        </div>
                     </Link>
-                    <Link href="/pricing">
-                        <Button variant="outline">Upgrade Plan</Button>
+
+                    <Link href="/analytics" className="group rounded-2xl border border-border p-5 transition-colors hover:border-primary/30">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                                <BarChart2 className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="font-semibold group-hover:text-primary transition-colors">Analytics</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Track performance across platforms
+                                </p>
+                            </div>
+                        </div>
+                    </Link>
+
+                    <Link href="/content" className="group rounded-2xl border border-border p-5 transition-colors hover:border-primary/30">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                                <Upload className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="font-semibold group-hover:text-primary transition-colors">Content</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {totalContent} item{totalContent === 1 ? "" : "s"} uploaded
+                                </p>
+                            </div>
+                        </div>
+                    </Link>
+
+                    <Link href="/settings" className="group rounded-2xl border border-border p-5 transition-colors hover:border-primary/30">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600">
+                                <Settings className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="font-semibold group-hover:text-primary transition-colors">Settings</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {connectedCount} connected account{connectedCount === 1 ? "" : "s"}
+                                </p>
+                            </div>
+                        </div>
                     </Link>
                 </div>
             </div>
-
-            <DashboardStats />
-
-            <div className="border p-6 rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold mb-4">Connected Accounts</h2>
-
-                {youtubeAccount ? (
-                    <div className="flex items-center gap-4 p-4 bg-green-50 border border-green-200 rounded text-green-700">
-                        <div className="font-medium">✅ YouTube Connected</div>
-                        <div className="text-sm">({youtubeAccount.email})</div>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-4">
-                        <Link href="/api/auth/google/url">
-                            <Button variant="outline" className="flex items-center gap-2">
-                                Connect YouTube
-                            </Button>
-                        </Link>
-                        <span className="text-sm text-muted-foreground">Authorize Publiq to upload videos.</span>
-                    </div>
-                )}
-            </div>
-
-            <div className="border p-6 rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold mb-4">Your Content</h2>
-
-                {contentItems.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">No content yet. Upload your first video!</p>
-                ) : (
-                    <div className="space-y-3">
-                        {contentItems.map((item) => {
-                            const publication = item.publications.find((p) => p.platform === "youtube");
-                            return (
-                                <div key={item.id} className="flex items-center justify-between p-4 border rounded">
-                                    <div className="space-y-1">
-                                        <p className="font-medium">{item.title}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {new Date(item.createdAt).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className={`text-xs px-2 py-1 rounded ${item.status === "published"
-                                            ? "bg-green-100 text-green-700"
-                                            : item.status === "scheduled"
-                                                ? "bg-blue-100 text-blue-700"
-                                                : "bg-yellow-100 text-yellow-700"
-                                            }`}>
-                                            {item.status}
-                                        </span>
-                                        {publication?.platformPostId && (
-                                            <a
-                                                href={`https://youtube.com/watch?v=${publication.platformPostId}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-xs text-blue-600 hover:underline"
-                                            >
-                                                View on YouTube
-                                            </a>
-                                        )}
-                                        <DeleteContentButton contentId={item.id} />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
-
-            <form action="/api/auth/logout" method="post" className="mt-6">
-                <Button type="submit" variant="secondary">
-                    Logout
-                </Button>
-            </form>
         </div>
     );
 }
