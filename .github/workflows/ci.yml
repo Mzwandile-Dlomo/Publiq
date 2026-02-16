@@ -61,4 +61,7 @@ jobs:
 
       - run: npm ci
       - run: npx prisma generate
-      - run: npm run build
+      - name: Build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run build
