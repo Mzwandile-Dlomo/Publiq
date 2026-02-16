@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { revalidateUser } from "@/lib/auth-user";
 
 export async function PATCH(
     _req: Request,
@@ -32,6 +33,8 @@ export async function PATCH(
             data: { isDefault: true },
         }),
     ]);
+
+    revalidateUser(session.userId as string);
 
     return NextResponse.json({ success: true });
 }

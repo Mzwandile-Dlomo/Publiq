@@ -2,9 +2,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard";
 import { getAuthenticatedUser } from "@/lib/auth-user";
+import { getAnalyticsData } from "@/lib/analytics";
 
 export default async function AnalyticsPage() {
-    await getAuthenticatedUser();
+    const user = await getAuthenticatedUser();
+    const data = await getAnalyticsData(user.id);
 
     return (
         <div className="min-h-screen">
@@ -27,7 +29,7 @@ export default async function AnalyticsPage() {
                 </div>
 
                 <div className="mt-12">
-                    <AnalyticsDashboard />
+                    <AnalyticsDashboard data={data} />
                 </div>
             </div>
         </div>
