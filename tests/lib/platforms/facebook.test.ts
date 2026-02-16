@@ -21,7 +21,7 @@ import { publishFacebookVideo, publishFacebookPhoto } from "@/lib/meta";
 const mockFindFirst = vi.mocked(prisma.socialAccount.findFirst);
 const mockFindMany = vi.mocked(prisma.socialAccount.findMany);
 const mockPublishVideo = vi.mocked(publishFacebookVideo);
-const mockPublishPhoto = vi.mocked(publishFacebookPhoto);
+vi.mocked(publishFacebookPhoto);
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -44,7 +44,7 @@ describe("facebookPublisher", () => {
         const account = {
             accessToken: "page-token-abc",
             providerId: "page-123",
-        } as any;
+        } as never;
 
         // First call (isDefault: true) returns the account
         mockFindFirst.mockResolvedValueOnce(account);
@@ -70,7 +70,7 @@ describe("facebookPublisher", () => {
         mockFindFirst.mockResolvedValueOnce({
             accessToken: "page-token",
             providerId: "page-1",
-        } as any);
+        } as never);
         mockPublishVideo.mockResolvedValueOnce({ id: "v-1" });
 
         await facebookPublisher.publish("user-1", { ...content, description: null });
@@ -111,7 +111,7 @@ describe("facebookStatsProvider", () => {
     it("fetches stats from Facebook Graph API", async () => {
         mockFindMany.mockResolvedValueOnce([
             { id: "acc-1", accessToken: "page-token-abc", providerId: "page-123", isDefault: true },
-        ] as any);
+        ] as never);
 
         const mockFetchFn = vi.fn()
             // reactions call
@@ -147,7 +147,7 @@ describe("facebookStatsProvider", () => {
     it("skips posts that return API errors", async () => {
         mockFindMany.mockResolvedValueOnce([
             { id: "acc-1", accessToken: "page-token-abc", providerId: "page-123", isDefault: true },
-        ] as any);
+        ] as never);
 
         const mockResponse = {
             ok: true,

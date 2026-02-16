@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -59,8 +59,8 @@ export function PricingCards() {
             } else {
                 throw new Error("No checkout URL returned");
             }
-        } catch (error: any) {
-            toast.error(error.message || "Error subscribing");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Error subscribing");
         } finally {
             setIsLoading(false);
         }

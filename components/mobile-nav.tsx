@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import Image from "next/image";
 import { NavLink } from "@/components/nav-link";
 
 export function MobileNav({
@@ -66,7 +67,7 @@ export function MobileNav({
                             <>
                                 <div className="flex items-center justify-center gap-3 px-3 py-2">
                                     {userImage ? (
-                                        <img src={userImage} alt={displayName} className="h-8 w-8 rounded-full object-cover" />
+                                        <Image src={userImage} alt={displayName} width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
                                     ) : (
                                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                                             {initials}

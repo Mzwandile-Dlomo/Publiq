@@ -73,18 +73,19 @@ export async function POST(
             });
 
             results.push({ platform, status: "success", postId: result.platformPostId });
-        } catch (error: any) {
+        } catch (error) {
             console.error(`Publishing to ${platform} failed:`, error);
+            const message = error instanceof Error ? error.message : "Unknown error";
 
             await prisma.publication.update({
                 where: { id: publication.id },
                 data: {
                     status: "failed",
-                    errorMessage: error.message || "Unknown error",
+                    errorMessage: message,
                 },
             });
 
-            results.push({ platform, status: "failed", error: error.message });
+            results.push({ platform, status: "failed", error: message });
         }
     }
 

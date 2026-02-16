@@ -52,7 +52,7 @@ describe("uploadToYouTube", () => {
     };
 
     it("uploads a video successfully", async () => {
-        mockFindFirst.mockResolvedValueOnce(account as any);
+        mockFindFirst.mockResolvedValueOnce(account as never);
         mockFetch.mockResolvedValueOnce({ body: new ReadableStream() });
         mockVideosInsert.mockResolvedValueOnce({
             data: { id: "yt-123", snippet: { title: "My Video" } },
@@ -89,7 +89,7 @@ describe("uploadToYouTube", () => {
     });
 
     it("throws when video file fetch fails", async () => {
-        mockFindFirst.mockResolvedValueOnce(account as any);
+        mockFindFirst.mockResolvedValueOnce(account as never);
         mockFetch.mockResolvedValueOnce({ body: null });
 
         await expect(
@@ -104,7 +104,7 @@ describe("getYouTubeVideoStats", () => {
             accessToken: "token",
             refreshToken: "refresh",
             expiresAt: null,
-        } as any);
+        } as never);
 
         mockVideosList.mockResolvedValueOnce({
             data: {
@@ -134,7 +134,7 @@ describe("getYouTubeVideoStats", () => {
             accessToken: "token",
             refreshToken: null,
             expiresAt: null,
-        } as any);
+        } as never);
 
         mockVideosList.mockResolvedValueOnce({
             data: {
@@ -153,7 +153,7 @@ describe("deleteFromYouTube", () => {
             accessToken: "token",
             refreshToken: "refresh",
             expiresAt: null,
-        } as any);
+        } as never);
         mockVideosDelete.mockResolvedValueOnce({});
 
         await deleteFromYouTube("user-1", "video-to-delete");

@@ -14,7 +14,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { PlatformConfig } from "@/lib/platforms";
-import { Youtube, Music2, Instagram, Facebook, Check, Lock, Loader2 } from "lucide-react";
+import { Youtube, Music2, Instagram, Facebook, Check, Lock } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     Youtube,

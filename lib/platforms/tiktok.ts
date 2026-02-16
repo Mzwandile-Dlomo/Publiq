@@ -32,7 +32,7 @@ export const tiktokPublisher: PlatformPublisher = {
 export const tiktokStatsProvider: PlatformStatsProvider = {
     platform: "tiktok",
 
-    async getStats(_userId, _platformPostIds) {
+    async getStats() {
         // TODO: Implement TikTok Video Insights API
         return {};
     },

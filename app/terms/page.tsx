@@ -18,7 +18,7 @@ export default function TermsPage() {
 
         <section className="space-y-3 text-sm text-muted-foreground">
           <p>
-            These Terms of Service ("Terms") govern your use of Publiq (the "Service"). By accessing or using the
+            These Terms of Service (&ldquo;Terms&rdquo;) govern your use of Publiq (the &ldquo;Service&rdquo;). By accessing or using the
             Service, you agree to these Terms. If you do not agree, do not use the Service.
           </p>
         </section>
@@ -60,7 +60,7 @@ export default function TermsPage() {
           <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
             <li>Do not attempt to access the Service in unauthorized ways.</li>
             <li>Do not interfere with the Service, including by introducing malware or abusive automation.</li>
-            <li>Do not use the Service to send spam or violate others' privacy.</li>
+            <li>Do not use the Service to send spam or violate others&apos; privacy.</li>
           </ul>
         </section>
 
@@ -83,7 +83,7 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Disclaimers and Limits</h2>
           <p className="text-sm text-muted-foreground">
-            The Service is provided "as is" and "as available." To the fullest extent permitted by law, Publiq disclaims
+            The Service is provided &ldquo;as is&rdquo; and &ldquo;as available.&rdquo; To the fullest extent permitted by law, Publiq disclaims
             warranties of any kind, and will not be liable for indirect, incidental, or consequential damages.
           </p>
         </section>

@@ -39,7 +39,8 @@ export const youtubePublisher: PlatformPublisher = {
             throw new Error("Failed to fetch video file");
         }
 
-        const fileStream = Readable.fromWeb(response.body as any);
+        // @ts-expect-error - Web ReadableStream vs Node stream type mismatch
+        const fileStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
 
         const res = await youtube.videos.insert({
             part: ["snippet", "status"],

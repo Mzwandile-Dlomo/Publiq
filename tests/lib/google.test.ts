@@ -30,7 +30,7 @@ vi.mock("googleapis", () => ({
     },
 }));
 
-import { getGoogleAuthUrl, getGoogleTokens, getGoogleUser, oauth2Client, SCOPES } from "@/lib/google";
+import { getGoogleAuthUrl, getGoogleTokens, getGoogleUser, SCOPES } from "@/lib/google";
 
 beforeEach(() => {
     vi.clearAllMocks();

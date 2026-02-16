@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getGoogleTokens, getGoogleUser, oauth2Client } from "@/lib/google";
+import { getGoogleUser, oauth2Client } from "@/lib/google";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma"; // Use the singleton instance
 

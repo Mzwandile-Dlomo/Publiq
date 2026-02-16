@@ -108,9 +108,8 @@ export async function uploadToYouTube(
     }
 
     // Convert web stream to Node stream matches googleapis expectation
-    // @ts-ignore - Web streams and Node streams are slightly different types but often compatible in recent Node versions
-    // or we can use generic stream conversion.
-    const fileStream = Readable.fromWeb(response.body as any);
+    // @ts-expect-error - Web ReadableStream vs Node stream type mismatch
+    const fileStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
 
     // 4. Upload to YouTube
     try {

@@ -1,4 +1,5 @@
-    import Link from "next/link";
+import Link from "next/link";
+import Image from "next/image";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MobileNav } from "@/components/mobile-nav";
@@ -62,9 +63,11 @@ export async function Navbar() {
                     <>
                         <Link href="/settings" className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2 hover:border-foreground/20 transition-colors">
                             {user?.image ? (
-                                <img
+                                <Image
                                     src={user.image}
                                     alt={displayName}
+                                    width={32}
+                                    height={32}
                                     className="h-8 w-8 rounded-full object-cover"
                                 />
                             ) : (

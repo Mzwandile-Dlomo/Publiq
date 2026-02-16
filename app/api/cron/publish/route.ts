@@ -71,18 +71,19 @@ export async function GET(req: Request) {
                     });
 
                     results.push({ contentId: content.id, platform, status: "success", postId: result.platformPostId });
-                } catch (error: any) {
+                } catch (error) {
                     console.error(`Cron: Failed to publish content ${content.id} to ${platform}:`, error);
+                    const message = error instanceof Error ? error.message : "Unknown error";
 
                     await prisma.publication.update({
                         where: { id: publication.id },
                         data: {
                             status: "failed",
-                            errorMessage: error.message || "Unknown error",
+                            errorMessage: message,
                         },
                     });
 
-                    results.push({ contentId: content.id, platform, status: "failed", error: error.message });
+                    results.push({ contentId: content.id, platform, status: "failed", error: message });
                 }
             }
 

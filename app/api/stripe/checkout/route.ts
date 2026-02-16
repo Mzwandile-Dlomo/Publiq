@@ -71,10 +71,10 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json({ url: checkoutSession.url });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Stripe Checkout Error:", error);
         return NextResponse.json(
-            { error: error.message || "Internal Server Error" },
+            { error: error instanceof Error ? error.message : "Internal Server Error" },
             { status: 500 }
         );
     }

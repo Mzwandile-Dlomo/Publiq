@@ -1,5 +1,3 @@
-import { vi } from "vitest";
-
 // Mock environment variables
 process.env.META_CLIENT_ID = "test-meta-client-id";
 process.env.META_CLIENT_SECRET = "test-meta-client-secret";

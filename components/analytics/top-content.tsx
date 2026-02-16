@@ -1,7 +1,7 @@
 "use client";
 
 import { Eye, ThumbsUp, MessageSquare, ExternalLink } from "lucide-react";
-import { platformConfigs, getPlatformPostUrl, type Platform } from "@/lib/platforms";
+import { platformConfigs, getPlatformPostUrl } from "@/lib/platforms";
 import type { TopContentItem } from "@/lib/analytics-types";
 
 interface TopContentProps {

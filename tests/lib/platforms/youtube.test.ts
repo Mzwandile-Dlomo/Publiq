@@ -62,7 +62,7 @@ describe("youtubePublisher", () => {
     });
 
     it("uploads video to YouTube", async () => {
-        mockFindFirst.mockResolvedValueOnce(socialAccount as any);
+        mockFindFirst.mockResolvedValueOnce(socialAccount as never);
         mockFetch.mockResolvedValueOnce({ body: new ReadableStream() });
         mockVideosInsert.mockResolvedValueOnce({
             data: { id: "yt-video-123" },
@@ -100,7 +100,7 @@ describe("youtubePublisher", () => {
     });
 
     it("throws when video file fetch fails", async () => {
-        mockFindFirst.mockResolvedValueOnce(socialAccount as any);
+        mockFindFirst.mockResolvedValueOnce(socialAccount as never);
         mockFetch.mockResolvedValueOnce({ body: null });
 
         await expect(youtubePublisher.publish("user-1", content)).rejects.toThrow(
@@ -109,7 +109,7 @@ describe("youtubePublisher", () => {
     });
 
     it("uses empty string when description is null", async () => {
-        mockFindFirst.mockResolvedValueOnce(socialAccount as any);
+        mockFindFirst.mockResolvedValueOnce(socialAccount as never);
         mockFetch.mockResolvedValueOnce({ body: new ReadableStream() });
         mockVideosInsert.mockResolvedValueOnce({ data: { id: "yt-1" } });
 
@@ -135,7 +135,7 @@ describe("youtubeStatsProvider", () => {
             accessToken: "token",
             refreshToken: "refresh",
             expiresAt: null,
-        } as any);
+        } as never);
 
         mockVideosList.mockResolvedValueOnce({
             data: {
@@ -179,7 +179,7 @@ describe("youtubeStatsProvider", () => {
             accessToken: "token",
             refreshToken: null,
             expiresAt: null,
-        } as any);
+        } as never);
 
         mockVideosList.mockResolvedValueOnce({
             data: { items: [{ id: "vid-1", statistics: null }] },
@@ -195,7 +195,7 @@ describe("youtubeStatsProvider", () => {
             accessToken: "token",
             refreshToken: "refresh",
             expiresAt,
-        } as any);
+        } as never);
 
         mockVideosList.mockResolvedValueOnce({ data: { items: [] } });
 

@@ -33,7 +33,7 @@ export async function getGoogleTokens(code: string) {
     return tokens;
 }
 
-export async function getGoogleUser(tokens: any) {
+export async function getGoogleUser(tokens: Parameters<typeof oauth2Client.setCredentials>[0]) {
     oauth2Client.setCredentials(tokens);
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const { data } = await oauth2.userinfo.get();

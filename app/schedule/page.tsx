@@ -14,10 +14,6 @@ export default async function SchedulePage() {
         redirect("/auth/login");
     }
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.userId as string },
-    });
-
     const scheduledItems = await prisma.content.findMany({
         where: {
             userId: session.userId as string,
@@ -35,14 +31,6 @@ export default async function SchedulePage() {
         .map((item) => item.scheduledAt)
         .filter((date): date is Date => Boolean(date))
         .map((date) => date.toISOString());
-
-    const displayName = user?.name || user?.email || "Creator";
-    const initials = displayName
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
 
     return (
         <div className="min-h-screen">

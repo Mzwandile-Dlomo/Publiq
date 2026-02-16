@@ -18,7 +18,6 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PlatformSelector } from "@/components/platforms/platform-selector";
 import type { Platform } from "@/lib/platforms";
-import { platformConfigs } from "@/lib/platforms";
 import type { MediaType } from "@/lib/platforms/types";
 
 const metadataSchema = z.object({
@@ -41,12 +40,11 @@ type SocialAccount = {
 
 interface PublishFormProps {
     fileUrl: string;
-    fileKey: string;
     fileName: string;
     mediaType: MediaType;
 }
 
-export function PublishForm({ fileUrl, fileKey, fileName, mediaType }: PublishFormProps) {
+export function PublishForm({ fileUrl, fileName, mediaType }: PublishFormProps) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
@@ -190,8 +188,8 @@ export function PublishForm({ fileUrl, fileKey, fileName, mediaType }: PublishFo
             }
 
             const result = await res.json();
-            const successCount = result.results?.filter((r: any) => r.status === "success").length || 0;
-            const failCount = result.results?.filter((r: any) => r.status === "failed").length || 0;
+            const successCount = result.results?.filter((r: { status: string }) => r.status === "success").length || 0;
+            const failCount = result.results?.filter((r: { status: string }) => r.status === "failed").length || 0;
 
             if (failCount > 0 && successCount > 0) {
                 toast.warning(`Published to ${successCount} platform(s), ${failCount} failed.`);
@@ -201,8 +199,8 @@ export function PublishForm({ fileUrl, fileKey, fileName, mediaType }: PublishFo
                 toast.success(`Published to ${successCount} platform(s) successfully!`);
             }
             router.push("/dashboard");
-        } catch (error: any) {
-            toast.error(error.message || "Error publishing content");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Error publishing content");
         } finally {
             setIsPublishing(false);
         }
