@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { revalidateUser } from "@/lib/auth-user";
 
 export async function DELETE(request: NextRequest) {
     const session = await verifySession();
@@ -23,6 +24,8 @@ export async function DELETE(request: NextRequest) {
     if (deleted.count === 0) {
         return NextResponse.json({ error: "No connected account found" }, { status: 404 });
     }
+
+    revalidateUser(session.userId as string);
 
     return NextResponse.json({ success: true });
 }

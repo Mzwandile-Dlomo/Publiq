@@ -1,22 +1,17 @@
-import { redirect } from "next/navigation";
-import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ContentList } from "@/components/content/content-list";
 import { ContentNav } from "@/components/content/content-nav";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getAuthenticatedUser } from "@/lib/auth-user";
 
 export default async function ContentPage({
     searchParams,
 }: {
     searchParams: Promise<{ filter?: string }>;
 }) {
-    const session = await verifySession();
+    const user = await getAuthenticatedUser();
     const { filter } = await searchParams;
-
-    if (!session) {
-        redirect("/auth/login");
-    }
 
     type PublicationRaw = {
         id: string;
@@ -41,7 +36,7 @@ export default async function ContentPage({
     };
 
     const items = await prisma.content.findMany({
-        where: { userId: session.userId as string },
+        where: { userId: user.id },
         include: { publications: true },
         orderBy: { createdAt: "desc" },
     });

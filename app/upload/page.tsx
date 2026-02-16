@@ -1,14 +1,9 @@
 import { UploadFlow } from "@/components/upload/upload-flow";
-import { verifySession } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { ContentNav } from "@/components/content/content-nav";
+import { getAuthenticatedUser } from "@/lib/auth-user";
 
 export default async function UploadPage() {
-    const session = await verifySession();
-
-    if (!session) {
-        redirect("/auth/login");
-    }
+    await getAuthenticatedUser();
 
     return (
         <div className="min-h-screen">

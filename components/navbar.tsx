@@ -1,15 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { verifySession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { MobileNav } from "@/components/mobile-nav";
 import { NavLink } from "@/components/nav-link";
+import { getOptionalUser } from "@/lib/auth-user";
 
 export async function Navbar() {
-    const session = await verifySession();
-    const user = session
-        ? await prisma.user.findUnique({ where: { id: session.userId as string } })
-        : null;
+    const user = await getOptionalUser();
+    const session = Boolean(user);
 
     const displayName = user?.name || user?.email || "Creator";
     const initials = displayName

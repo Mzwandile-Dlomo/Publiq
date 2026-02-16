@@ -2,6 +2,7 @@ import { exchangeMetaCodeForToken, getMetaUserInfo, getFacebookPages } from "@/l
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { createSession, verifySession } from "@/lib/auth";
+import { revalidateUser } from "@/lib/auth-user";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -129,6 +130,7 @@ export async function GET(request: Request) {
         }
 
         await createSession(userId);
+        revalidateUser(userId);
         return NextResponse.redirect(new URL("/dashboard", baseUrl));
 
     } catch (error) {

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Send } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -37,6 +37,7 @@ type ContentItem = {
     description: string | null;
     status: string;
     scheduledAt: string | null;
+    publications?: { id: string; platform: string; status: string }[];
 };
 
 export function EditContentDialog({
@@ -48,6 +49,7 @@ export function EditContentDialog({
 }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
+    const [isPublishing, setIsPublishing] = useState(false);
     const [date, setDate] = useState<Date | undefined>(undefined);
 
     const {
@@ -68,6 +70,10 @@ export function EditContentDialog({
             setDate(item.scheduledAt ? new Date(item.scheduledAt) : undefined);
         }
     }, [item, reset]);
+
+    const hasPendingPublications = item?.publications?.some(
+        (p) => p.status === "pending"
+    );
 
     async function onSave(data: EditFormValues) {
         if (!item) return;
@@ -95,6 +101,41 @@ export function EditContentDialog({
             toast.error("Failed to update content");
         } finally {
             setIsSaving(false);
+        }
+    }
+
+    async function onPublish() {
+        if (!item) return;
+
+        setIsPublishing(true);
+        try {
+            const res = await fetch(`/api/content/${item.id}/publish`, {
+                method: "POST",
+            });
+
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error || "Failed to publish");
+            }
+
+            const { results } = await res.json();
+            const succeeded = results.filter((r: { status: string }) => r.status === "success").length;
+            const failed = results.filter((r: { status: string }) => r.status === "failed").length;
+
+            if (failed === 0) {
+                toast.success(`Published to ${succeeded} platform${succeeded === 1 ? "" : "s"}`);
+            } else if (succeeded > 0) {
+                toast.warning(`Published to ${succeeded}, failed on ${failed} platform${failed === 1 ? "" : "s"}`);
+            } else {
+                toast.error("Publishing failed on all platforms");
+            }
+
+            onClose();
+            router.refresh();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to publish");
+        } finally {
+            setIsPublishing(false);
         }
     }
 
@@ -164,18 +205,29 @@ export function EditContentDialog({
                         </div>
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="flex-col gap-2 sm:flex-row">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={onClose}
-                            disabled={isSaving}
+                            disabled={isSaving || isPublishing}
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isSaving}>
+                        <Button type="submit" disabled={isSaving || isPublishing}>
                             {isSaving ? "Saving..." : "Save changes"}
                         </Button>
+                        {hasPendingPublications && (
+                            <Button
+                                type="button"
+                                onClick={onPublish}
+                                disabled={isSaving || isPublishing}
+                                className="gap-2"
+                            >
+                                <Send className="h-3.5 w-3.5" />
+                                {isPublishing ? "Publishing..." : "Publish now"}
+                            </Button>
+                        )}
                     </DialogFooter>
                 </form>
             </DialogContent>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteFromYouTube } from "@/lib/youtube";
+import { deleteFromFacebook } from "@/lib/meta";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -76,13 +77,33 @@ export async function DELETE(
         return NextResponse.json({ error: "Content not found" }, { status: 404 });
     }
 
-    // Delete from YouTube for any successful publications
+    // Delete from platforms for any successful publications
     for (const pub of content.publications) {
-        if (pub.platform === "youtube" && pub.platformPostId) {
+        if (!pub.platformPostId) continue;
+
+        if (pub.platform === "youtube") {
             try {
                 await deleteFromYouTube(session.userId as string, pub.platformPostId);
             } catch (error) {
                 console.error(`Failed to delete YouTube video ${pub.platformPostId}:`, error);
+            }
+        }
+
+        if (pub.platform === "facebook") {
+            try {
+                const account = pub.socialAccountId
+                    ? await prisma.socialAccount.findFirst({
+                        where: { id: pub.socialAccountId, userId: session.userId as string },
+                    })
+                    : await prisma.socialAccount.findFirst({
+                        where: { userId: session.userId as string, provider: "facebook" },
+                    });
+
+                if (account) {
+                    await deleteFromFacebook(account.accessToken, pub.platformPostId);
+                }
+            } catch (error) {
+                console.error(`Failed to delete Facebook post ${pub.platformPostId}:`, error);
             }
         }
     }

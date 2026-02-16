@@ -1,23 +1,12 @@
-import { redirect } from "next/navigation";
-import { verifySession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { PlatformConnections } from "@/components/platforms/platform-connections";
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { getAuthenticatedUser } from "@/lib/auth-user";
 
 export default async function SettingsPage() {
-    const session = await verifySession();
-
-    if (!session) {
-        redirect("/auth/login");
-    }
-
-    const user = await prisma.user.findUnique({
-        where: { id: session.userId as string },
-        include: { socialAccounts: true, subscription: true },
-    });
+    const user = await getAuthenticatedUser();
 
     const displayName = user?.name || user?.email || "Creator";
     const planName = user?.subscription?.plan ?? "free";

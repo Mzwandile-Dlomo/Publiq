@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
+import { revalidateUser } from "@/lib/auth-user";
 
 export async function POST(req: Request) {
     const body = await req.text();
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
                             plan: "pro",
                         }
                     });
+                    revalidateUser(userId);
                 }
                 break;
 
@@ -71,6 +73,12 @@ export async function POST(req: Request) {
                     where: { stripeSubscriptionId: subscriptionId },
                     data: { status: "active" }
                 });
+
+                const sub = await prisma.subscription.findFirst({
+                    where: { stripeSubscriptionId: subscriptionId },
+                    select: { userId: true },
+                });
+                if (sub) revalidateUser(sub.userId);
 
                 break;
 
