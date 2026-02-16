@@ -57,20 +57,24 @@ export async function GET(request: Request) {
         });
 
         if (pages && pages.length > 0) {
-            // Store the first Page as the "facebook" connection (needed for publishing)
-            const page = pages[0];
-            await prisma.socialAccount.create({
-                data: {
-                    provider: "facebook",
-                    providerId: page.id,
-                    userId: userId,
-                    accessToken: page.access_token,
-                    firstName: page.name,
-                    name: page.name,
-                    email: userInfo.email,
-                    avatarUrl: `https://graph.facebook.com/${page.id}/picture`,
-                }
-            });
+            // Store all Pages (first page becomes default)
+            await Promise.all(
+                pages.map((page, index) =>
+                    prisma.socialAccount.create({
+                        data: {
+                            provider: "facebook",
+                            providerId: page.id,
+                            userId: userId,
+                            accessToken: page.access_token,
+                            firstName: page.name,
+                            name: page.name,
+                            email: userInfo.email,
+                            avatarUrl: `https://graph.facebook.com/${page.id}/picture`,
+                            isDefault: index === 0,
+                        }
+                    })
+                )
+            );
 
             // Store Instagram business accounts if linked to any page
             for (const p of pages) {
@@ -108,6 +112,7 @@ export async function GET(request: Request) {
                     firstName: userInfo.name,
                     email: userInfo.email,
                     avatarUrl: userInfo.picture?.data?.url || `https://graph.facebook.com/${userInfo.id}/picture`,
+                    isDefault: true,
                 }
             });
         }

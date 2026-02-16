@@ -55,6 +55,7 @@ export async function GET(req: Request) {
                 firstName: userInfo.given_name,
                 lastName: userInfo.family_name,
                 avatarUrl: userInfo.picture,
+                isDefault: true,
             },
         });
 

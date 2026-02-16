@@ -60,6 +60,7 @@ export async function POST(
                 mediaType: content.mediaType as "video" | "image",
                 title: content.title,
                 description: content.description,
+                socialAccountId: publication.socialAccountId,
             });
 
             await prisma.publication.update({

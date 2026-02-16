@@ -38,17 +38,23 @@ export async function GET() {
                 platformPostId: { not: null },
                 platform: { in: connectedPlatforms },
             },
+            select: {
+                id: true,
+                platform: true,
+                platformPostId: true,
+                socialAccountId: true,
+            },
         });
 
         // Group post IDs by platform
-        const postIdsByPlatform = new Map<Platform, { pubId: string; postId: string }[]>();
+        const postIdsByPlatform = new Map<Platform, { pubId: string; postId: string; socialAccountId: string | null }[]>();
         for (const pub of publications) {
             const platform = pub.platform as Platform;
             if (!PLATFORMS.includes(platform)) continue;
             if (!pub.platformPostId) continue;
 
             const list = postIdsByPlatform.get(platform) || [];
-            list.push({ pubId: pub.id, postId: pub.platformPostId });
+            list.push({ pubId: pub.id, postId: pub.platformPostId, socialAccountId: pub.socialAccountId });
             postIdsByPlatform.set(platform, list);
         }
 
@@ -57,8 +63,10 @@ export async function GET() {
             async ([platform, entries]) => {
                 try {
                     const provider = getStatsProvider(platform);
-                    const postIds = entries.map((e) => e.postId);
-                    const statsMap = await provider.getStats(userId, postIds);
+                    const statsMap = await provider.getStats(
+                        userId,
+                        entries.map((e) => ({ postId: e.postId, socialAccountId: e.socialAccountId }))
+                    );
 
                     // Update publications with fresh stats
                     for (const entry of entries) {

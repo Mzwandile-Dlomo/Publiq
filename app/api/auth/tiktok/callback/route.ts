@@ -103,6 +103,7 @@ export async function GET(request: Request) {
                     expiresAt: Math.floor(Date.now() / 1000) + expires_in,
                     firstName: userInfo.display_name, // Mapping display name to first name slightly inaccurate but works for now
                     avatarUrl: userInfo.avatar_url,
+                    isDefault: true,
                 }
             });
         }

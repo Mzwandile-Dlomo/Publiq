@@ -16,7 +16,7 @@ export async function GET() {
             name: true,
             image: true,
             socialAccounts: {
-                select: { id: true, provider: true, email: true, firstName: true, lastName: true },
+                select: { id: true, provider: true, providerId: true, name: true, email: true, firstName: true, lastName: true, avatarUrl: true, isDefault: true },
             },
         },
     });

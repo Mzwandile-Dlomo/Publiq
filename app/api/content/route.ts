@@ -13,6 +13,7 @@ const contentSchema = z.object({
     scheduledAt: z.string().optional(),
     status: z.enum(["draft", "scheduled"]).optional(),
     platforms: z.array(z.enum(PLATFORMS)).min(1, "Select at least one platform"),
+    platformAccounts: z.record(z.string(), z.string()).optional(),
 });
 
 export async function POST(req: Request) {
@@ -23,7 +24,35 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { title, description, mediaUrl, mediaType, thumbnailUrl, platforms } = contentSchema.parse(body);
+        const { title, description, mediaUrl, mediaType, thumbnailUrl, platforms, platformAccounts } = contentSchema.parse(body);
+
+        const accountIds = Object.values(platformAccounts || {}).filter(Boolean);
+        const accounts = accountIds.length > 0
+            ? await prisma.socialAccount.findMany({
+                where: {
+                    userId: session.userId as string,
+                    id: { in: accountIds },
+                },
+            })
+            : [];
+        const accountById = new Map(accounts.map((acc) => [acc.id, acc]));
+
+        const defaultAccounts = await prisma.socialAccount.findMany({
+            where: {
+                userId: session.userId as string,
+                provider: { in: platforms },
+                isDefault: true,
+            },
+        });
+        const defaultByProvider = new Map(defaultAccounts.map((acc) => [acc.provider, acc]));
+
+        for (const [platform, accountId] of Object.entries(platformAccounts || {})) {
+            if (!platforms.includes(platform as (typeof PLATFORMS)[number])) continue;
+            const account = accountById.get(accountId);
+            if (!account || account.provider !== platform) {
+                return NextResponse.json({ error: "Invalid platform account selection" }, { status: 400 });
+            }
+        }
 
         const content = await prisma.content.create({
             data: {
@@ -36,10 +65,18 @@ export async function POST(req: Request) {
                 status: body.status || "draft",
                 scheduledAt: body.scheduledAt,
                 publications: {
-                    create: platforms.map((platform) => ({
-                        platform,
-                        status: "pending",
-                    })),
+                    create: platforms.map((platform) => {
+                        const selectedAccountId = platformAccounts?.[platform];
+                        const resolvedAccountId = selectedAccountId
+                            ? accountById.get(selectedAccountId)?.id
+                            : defaultByProvider.get(platform)?.id;
+
+                        return {
+                            platform,
+                            status: "pending",
+                            socialAccountId: resolvedAccountId ?? null,
+                        };
+                    }),
                 },
             },
             include: {
