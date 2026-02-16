@@ -127,6 +127,18 @@ export default async function Home() {
             </div>
           </div>
         </section>
+
+        <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-border py-8 text-xs text-muted-foreground">
+          <span>© 2026 Publiq</span>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="transition hover:text-foreground">
+              Terms
+            </Link>
+            <Link href="/privacy" className="transition hover:text-foreground">
+              Privacy
+            </Link>
+          </div>
+        </footer>
       </div>
     </div>
   );
