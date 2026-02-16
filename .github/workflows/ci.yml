@@ -24,6 +24,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Prisma generate
+        run: npx prisma generate
+
       - name: ESLint
         run: npx eslint .
 
