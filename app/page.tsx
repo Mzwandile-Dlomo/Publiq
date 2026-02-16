@@ -5,11 +5,11 @@ export default async function Home() {
   const session = await verifySession();
 
   return (
-    <div className="bg-aurora bg-noise min-h-screen text-foreground">
+    <div className="min-h-screen text-foreground">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 pb-20">
         <section className="mt-16 grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               Creator OS
             </span>
             <h1 className="font-display text-4xl leading-tight sm:text-5xl lg:text-6xl">
@@ -53,14 +53,14 @@ export default async function Home() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-              <span className="rounded-full bg-white/70 px-3 py-1">Unified uploads</span>
-              <span className="rounded-full bg-white/70 px-3 py-1">Smart scheduling</span>
-              <span className="rounded-full bg-white/70 px-3 py-1">Channel analytics</span>
+              <span className="rounded-full bg-secondary px-3 py-1">Unified uploads</span>
+              <span className="rounded-full bg-secondary px-3 py-1">Smart scheduling</span>
+              <span className="rounded-full bg-secondary px-3 py-1">Channel analytics</span>
             </div>
           </div>
           <div className="relative">
             <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-3xl" />
-            <div className="relative space-y-5 rounded-3xl border border-white/70 bg-white/90 p-6 shadow-xl">
+            <div className="relative space-y-5 rounded-3xl border border-border bg-card p-6 shadow-xl">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Release week</span>
                 <span>Feb 17 - Feb 23</span>
@@ -79,7 +79,7 @@ export default async function Home() {
                   <div className="text-xs text-muted-foreground">Draft · Instagram · Sun 11:00 AM</div>
                 </div>
               </div>
-              <div className="rounded-2xl bg-amber-50 p-4 text-xs text-amber-700">
+              <div className="rounded-2xl bg-secondary p-4 text-xs text-muted-foreground">
                 Next release window is 68% booked. Move dates to keep cadence.
               </div>
             </div>
@@ -101,14 +101,14 @@ export default async function Home() {
               body: "Consolidated analytics show reach, engagement, and follower growth.",
             },
           ].map((item) => (
-            <div key={item.title} className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-sm">
+            <div key={item.title} className="rounded-3xl border border-border bg-card p-6 shadow-sm">
               <div className="text-base font-semibold">{item.title}</div>
               <p className="mt-2 text-sm text-muted-foreground">{item.body}</p>
             </div>
           ))}
         </section>
 
-        <section className="mt-16 rounded-3xl border border-white/70 bg-white/80 p-10">
+        <section className="mt-16 rounded-3xl border border-border bg-card p-10">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
             <div>
               <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
