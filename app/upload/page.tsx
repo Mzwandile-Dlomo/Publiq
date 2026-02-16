@@ -1,6 +1,7 @@
 import { UploadFlow } from "@/components/upload/upload-flow";
 import { verifySession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { ContentNav } from "@/components/content/content-nav";
 
 export default async function UploadPage() {
     const session = await verifySession();
@@ -11,6 +12,7 @@ export default async function UploadPage() {
 
     return (
         <div className="min-h-screen">
+            <ContentNav />
             <div className="mx-auto max-w-6xl px-6 py-8">
                 <div className="text-center">
                     <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">

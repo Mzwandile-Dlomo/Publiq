@@ -1,5 +1,3 @@
-import { BottomNav } from "@/components/dashboard/bottom-nav";
-
 export default function ContentLayout({
     children,
 }: {
@@ -10,10 +8,6 @@ export default function ContentLayout({
             <main className="flex-1 pb-24 md:pb-0">
                 {children}
             </main>
-
-            <div className="md:hidden">
-                <BottomNav />
-            </div>
         </div>
     );
 }

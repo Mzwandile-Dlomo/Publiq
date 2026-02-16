@@ -32,34 +32,32 @@ export async function Navbar() {
 
             {/* Desktop nav – visible md+ only */}
             <nav className="desktop-only items-center gap-5 text-sm font-medium">
-                <NavLink
-                    href="/dashboard"
-                    className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                    activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
-                >
-                    Dashboard
-                </NavLink>
-                <NavLink
-                    href="/upload"
-                    className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                    activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
-                >
-                    Upload
-                </NavLink>
-                <NavLink
-                    href="/schedule"
-                    className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                    activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
-                >
-                    Schedule
-                </NavLink>
-                <NavLink
-                    href="/analytics"
-                    className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                    activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
-                >
-                    Analytics
-                </NavLink>
+                {session ? (
+                    <>
+                        <NavLink
+                            href="/dashboard"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                        >
+                            Dashboard
+                        </NavLink>
+                        <NavLink
+                            href="/content"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                            activePaths={["/upload", "/schedule"]}
+                        >
+                            Content
+                        </NavLink>
+                        <NavLink
+                            href="/analytics"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                        >
+                            Analytics
+                        </NavLink>
+                    </>
+                ) : null}
                 {session ? (
                     <>
                         <Link href="/settings" className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2 hover:border-foreground/20 transition-colors">

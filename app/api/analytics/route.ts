@@ -14,12 +14,29 @@ export async function GET() {
 
         const userId = session.userId as string;
 
-        // Fetch all successful publications grouped by platform
+        // Get connected platforms
+        const socialAccounts = await prisma.socialAccount.findMany({
+            where: { userId },
+            select: { provider: true },
+        });
+        const connectedPlatforms = socialAccounts.map((a) => a.provider);
+
+        if (connectedPlatforms.length === 0) {
+            const response: AnalyticsResponse = {
+                totals: { views: 0, likes: 0, comments: 0 },
+                platforms: {},
+                topContent: [],
+            };
+            return NextResponse.json(response);
+        }
+
+        // Fetch all successful publications for connected platforms only
         const publications = await prisma.publication.findMany({
             where: {
                 content: { userId },
                 status: "success",
                 platformPostId: { not: null },
+                platform: { in: connectedPlatforms },
             },
         });
 
@@ -65,10 +82,10 @@ export async function GET() {
 
         await Promise.all(syncPromises);
 
-        // Per-platform breakdown
+        // Per-platform breakdown (connected platforms only)
         const platformGroups = await prisma.publication.groupBy({
             by: ["platform"],
-            where: { content: { userId } },
+            where: { content: { userId }, platform: { in: connectedPlatforms } },
             _sum: { views: true, likes: true, comments: true },
             _count: true,
         });
@@ -91,9 +108,9 @@ export async function GET() {
             totals.comments += c;
         }
 
-        // Top 5 performing publications by views
+        // Top 5 performing publications by views (connected platforms only)
         const topPubs = await prisma.publication.findMany({
-            where: { content: { userId }, status: "success" },
+            where: { content: { userId }, status: "success", platform: { in: connectedPlatforms } },
             orderBy: { views: "desc" },
             take: 5,
             include: { content: { select: { title: true } } },

@@ -1,7 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { PlatformConfig } from "@/lib/platforms";
 import { Youtube, Music2, Instagram, Facebook, Check, Lock, Loader2 } from "lucide-react";
 
@@ -68,14 +79,38 @@ export function PlatformCard({ platform, account, onDisconnect }: PlatformCardPr
                     </div>
                 </div>
                 {onDisconnect && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="rounded-full text-muted-foreground hover:text-destructive"
-                        onClick={() => onDisconnect(platform.id)}
-                    >
-                        Disconnect
-                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-full text-muted-foreground hover:text-destructive"
+                            >
+                                Disconnect
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Disconnect {platform.name}?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will remove your {platform.name} connection. You won&apos;t be able to publish to this platform until you reconnect.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    variant="destructive"
+                                    className="rounded-full"
+                                    onClick={() => {
+                                        onDisconnect(platform.id);
+                                        toast.success(`${platform.name} disconnected`);
+                                    }}
+                                >
+                                    Disconnect
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 )}
             </div>
         );

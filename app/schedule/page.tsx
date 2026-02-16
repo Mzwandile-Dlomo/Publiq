@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { getPlatformPostUrl, platformConfigs, type Platform } from "@/lib/platforms";
 import { ScheduleCalendar } from "@/components/schedule/schedule-calendar";
+import { ContentNav } from "@/components/content/content-nav";
 
 export default async function SchedulePage() {
     const session = await verifySession();
@@ -45,6 +46,7 @@ export default async function SchedulePage() {
 
     return (
         <div className="min-h-screen">
+            <ContentNav />
             <div className="mx-auto max-w-6xl px-6 py-8">
                 <div className="text-center">
                     <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -83,7 +85,7 @@ export default async function SchedulePage() {
                             <div className="mt-4">
                                 <Link href="/upload">
                                     <Button variant="outline" className="rounded-full">
-                                        Upload a video
+                                        Upload a content
                                     </Button>
                                 </Link>
                             </div>

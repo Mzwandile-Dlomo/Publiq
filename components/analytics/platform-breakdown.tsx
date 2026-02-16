@@ -35,11 +35,26 @@ export function PlatformBreakdown({ platforms, totalViews, loading }: PlatformBr
         );
     }
 
+    const connectedPlatforms = PLATFORMS.filter((p) => p in platforms);
+
+    if (connectedPlatforms.length === 0) {
+        return (
+            <div className="space-y-4">
+                <h2 className="text-lg font-semibold">Platform Breakdown</h2>
+                <div className="rounded-2xl border border-dashed border-border px-6 py-8 text-center">
+                    <p className="text-sm text-muted-foreground">
+                        No connected platforms. Connect a platform in Settings to see analytics.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-4">
             <h2 className="text-lg font-semibold">Platform Breakdown</h2>
             <div className="grid gap-4 sm:grid-cols-2">
-                {PLATFORMS.map((platformId) => {
+                {connectedPlatforms.map((platformId) => {
                     const config = platformConfigs[platformId];
                     const stats = platforms[platformId];
                     const Icon = platformIcons[platformId];

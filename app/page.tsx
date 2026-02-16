@@ -6,7 +6,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 pb-20">
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6">
         <section className="mt-16 grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -128,7 +128,7 @@ export default async function Home() {
           </div>
         </section>
 
-        <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-border py-8 text-xs text-muted-foreground">
+        <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-border text-xs text-muted-foreground">
           <span>© {new Date().getFullYear()} Publiq</span>
           <div className="flex items-center gap-4">
             <Link href="/terms" className="transition hover:text-foreground">

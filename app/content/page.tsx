@@ -2,10 +2,15 @@ import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ContentList } from "@/components/content/content-list";
+import { ContentNav } from "@/components/content/content-nav";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default async function ContentPage() {
+export default async function ContentPage({
+    searchParams,
+}: {
+    searchParams: { filter?: string };
+}) {
     const session = await verifySession();
 
     if (!session) {
@@ -40,6 +45,7 @@ export default async function ContentPage() {
 
     return (
         <div className="min-h-screen">
+            <ContentNav />
             <div className="mx-auto max-w-6xl px-6 py-8">
                 <div className="text-center">
                     <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -59,7 +65,7 @@ export default async function ContentPage() {
                 </div>
 
                 <div className="mt-12">
-                    <ContentList items={serialized} />
+                    <ContentList items={serialized} initialFilter={searchParams.filter} />
                 </div>
             </div>
         </div>

@@ -6,6 +6,7 @@ import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/navbar";
+import { BottomNav } from "@/components/dashboard/bottom-nav";
 
 const sora = Sora({
   variable: "--font-sora",
@@ -46,6 +47,9 @@ export default function RootLayout({
         />
         <Navbar />
         {children}
+        <div className="md:hidden">
+          <BottomNav />
+        </div>
         <Toaster />
       </body>
     </html>

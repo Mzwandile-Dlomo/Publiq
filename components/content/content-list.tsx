@@ -36,8 +36,17 @@ const statusBadge: Record<string, string> = {
     published: "bg-emerald-100 text-emerald-700",
 };
 
-export function ContentList({ items }: { items: ContentItem[] }) {
-    const [filter, setFilter] = useState<StatusFilter>("all");
+export function ContentList({
+    items,
+    initialFilter = "all",
+}: {
+    items: ContentItem[];
+    initialFilter?: StatusFilter | string;
+}) {
+    const startingFilter = STATUS_FILTERS.includes(initialFilter as StatusFilter)
+        ? (initialFilter as StatusFilter)
+        : "all";
+    const [filter, setFilter] = useState<StatusFilter>(startingFilter);
     const [editItem, setEditItem] = useState<ContentItem | null>(null);
 
     const filtered = filter === "all"

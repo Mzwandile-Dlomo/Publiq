@@ -9,15 +9,19 @@ export function NavLink({
     className,
     activeClassName,
     onClick,
+    activePaths,
 }: {
     href: string;
     children: React.ReactNode;
     className: string;
     activeClassName: string;
     onClick?: () => void;
+    activePaths?: string[];
 }) {
     const pathname = usePathname();
-    const isActive = pathname === href || pathname.startsWith(href + "/");
+    const isActive = pathname === href
+        || pathname.startsWith(href + "/")
+        || (activePaths ?? []).some((path) => pathname === path || pathname.startsWith(path + "/"));
 
     return (
         <Link

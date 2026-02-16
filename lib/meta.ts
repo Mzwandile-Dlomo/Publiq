@@ -6,6 +6,8 @@ export const META_REDIRECT_URI = process.env.META_REDIRECT_URI || "http://localh
 // Scopes required
 // public_profile, email - Basic info
 // pages_show_list, pages_read_engagement, pages_manage_posts - Facebook Pages
+// pages_read_user_content - Read comments/reactions on Page posts
+// read_insights - Read video views and post impressions
 // instagram_basic, instagram_content_publish - Instagram Business
 export const META_SCOPES = [
     "public_profile",
@@ -13,6 +15,8 @@ export const META_SCOPES = [
     "pages_show_list",
     "pages_read_engagement",
     "pages_manage_posts",
+    "pages_read_user_content",
+    "read_insights",
     "instagram_basic",
     "instagram_content_publish"
 ];
@@ -80,7 +84,8 @@ export async function publishFacebookVideo(
         throw new Error(data.error.message);
     }
 
-    return { id: data.id };
+    // Prefer post_id (the page post) over id (the video object) for engagement tracking
+    return { id: data.post_id || data.id };
 }
 
 export async function publishFacebookPhoto(
@@ -105,7 +110,8 @@ export async function publishFacebookPhoto(
         throw new Error(data.error.message);
     }
 
-    return { id: data.id };
+    // Prefer post_id (the page post) over id (the photo object) for engagement tracking
+    return { id: data.post_id || data.id };
 }
 
 export async function publishInstagramImage(
