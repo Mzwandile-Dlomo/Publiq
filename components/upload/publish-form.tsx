@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +28,17 @@ const metadataSchema = z.object({
 
 type MetadataFormValues = z.infer<typeof metadataSchema>;
 
+type SocialAccount = {
+    id: string;
+    provider: string;
+    providerId: string;
+    name?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    avatarUrl?: string | null;
+    isDefault?: boolean | null;
+};
+
 interface PublishFormProps {
     fileUrl: string;
     fileKey: string;
@@ -43,6 +54,8 @@ export function PublishForm({ fileUrl, fileKey, fileName, mediaType }: PublishFo
     const [contentId, setContentId] = useState<string | null>(null);
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([]);
+    const [facebookPages, setFacebookPages] = useState<SocialAccount[]>([]);
+    const [selectedFacebookPageId, setSelectedFacebookPageId] = useState<string | null>(null);
 
     const { register, handleSubmit, trigger, getValues, formState: { errors } } = useForm<MetadataFormValues>({
         resolver: zodResolver(metadataSchema),
@@ -52,14 +65,47 @@ export function PublishForm({ fileUrl, fileKey, fileName, mediaType }: PublishFo
         },
     });
 
+    useEffect(() => {
+        async function fetchAccounts() {
+            try {
+                const res = await fetch("/api/auth/me");
+                if (!res.ok) return;
+                const data = await res.json();
+                const accounts: SocialAccount[] = data.user?.socialAccounts || [];
+                const fbPages = accounts.filter((acc) => acc.provider === "facebook");
+                setFacebookPages(fbPages);
+                const defaultPage = fbPages.find((p) => p.isDefault) || fbPages[0] || null;
+                setSelectedFacebookPageId(defaultPage?.id ?? null);
+            } catch {
+                // Ignore fetch errors
+            }
+        }
+
+        fetchAccounts();
+    }, []);
+
+    useEffect(() => {
+        if (!selectedPlatforms.includes("facebook")) return;
+        if (selectedFacebookPageId) return;
+        const defaultPage = facebookPages.find((p) => p.isDefault) || facebookPages[0] || null;
+        setSelectedFacebookPageId(defaultPage?.id ?? null);
+    }, [selectedPlatforms, facebookPages, selectedFacebookPageId]);
+
     async function onSave(data: MetadataFormValues, status: 'draft' | 'scheduled' = 'draft') {
         if (selectedPlatforms.length === 0) {
             toast.error("Please select at least one platform");
             return null;
         }
+        if (selectedPlatforms.includes("facebook") && !selectedFacebookPageId) {
+            toast.error("Please select a Facebook Page");
+            return null;
+        }
 
         setIsSaving(true);
         try {
+            const platformAccounts = selectedPlatforms.includes("facebook") && selectedFacebookPageId
+                ? { facebook: selectedFacebookPageId }
+                : undefined;
             const res = await fetch("/api/content", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -71,6 +117,7 @@ export function PublishForm({ fileUrl, fileKey, fileName, mediaType }: PublishFo
                     scheduledAt: date,
                     status,
                     platforms: selectedPlatforms,
+                    platformAccounts,
                 }),
             });
 
@@ -108,6 +155,10 @@ export function PublishForm({ fileUrl, fileKey, fileName, mediaType }: PublishFo
     async function onPublish() {
         if (selectedPlatforms.length === 0) {
             toast.error("Please select at least one platform");
+            return;
+        }
+        if (selectedPlatforms.includes("facebook") && !selectedFacebookPageId) {
+            toast.error("Please select a Facebook Page");
             return;
         }
 
@@ -188,6 +239,35 @@ export function PublishForm({ fileUrl, fileKey, fileName, mediaType }: PublishFo
                             <p className="text-xs text-muted-foreground">Select at least one platform to publish to.</p>
                         )}
                     </div>
+
+                    {selectedPlatforms.includes("facebook") && (
+                        <div className="space-y-2">
+                            <Label htmlFor="facebook-page">Facebook Page</Label>
+                            {facebookPages.length > 0 ? (
+                                <select
+                                    id="facebook-page"
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                    value={selectedFacebookPageId ?? ""}
+                                    onChange={(e) => setSelectedFacebookPageId(e.target.value)}
+                                >
+                                    {facebookPages.map((page) => {
+                                        const label = page.name
+                                            || [page.firstName, page.lastName].filter(Boolean).join(" ")
+                                            || page.providerId;
+                                        return (
+                                            <option key={page.id} value={page.id}>
+                                                {label}{page.isDefault ? " (default)" : ""}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                            ) : (
+                                <p className="text-xs text-muted-foreground">
+                                    No Facebook Pages connected.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label>Schedule (Optional)</Label>

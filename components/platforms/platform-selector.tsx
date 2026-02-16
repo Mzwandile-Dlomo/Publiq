@@ -36,7 +36,7 @@ export function PlatformSelector({ selected, onChange, mediaType }: PlatformSele
                     const providers = (data.user?.socialAccounts || []).map(
                         (acc: ConnectedAccount) => acc.provider
                     );
-                    setConnectedProviders(providers);
+                    setConnectedProviders(Array.from(new Set(providers)));
                 }
             } catch {
                 // Silently fail — user may not be fully loaded yet

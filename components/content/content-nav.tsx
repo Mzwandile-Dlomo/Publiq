@@ -8,7 +8,7 @@ const links = [
     { href: "/content", label: "All Content", key: "all" },
     { href: "/upload", label: "Upload / Create", key: "upload" },
     { href: "/schedule", label: "Scheduled", key: "scheduled" },
-    { href: "/content?filter=draft", label: "Drafts", key: "drafts" },
+    // { href: "/content?filter=draft", label: "Drafts", key: "drafts" },
 ];
 
 export function ContentNav() {
