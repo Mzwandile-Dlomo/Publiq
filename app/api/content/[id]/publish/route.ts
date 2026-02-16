@@ -26,7 +26,7 @@ export async function POST(
 
     // Get all pending publications for this content
     const pendingPublications = content.publications.filter(
-        (p) => p.status === "pending"
+        (p: { status: string }) => p.status === "pending"
     );
 
     if (pendingPublications.length === 0) {

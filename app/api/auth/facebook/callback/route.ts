@@ -18,6 +18,13 @@ export async function GET(request: Request) {
     }
 
     try {
+        type FacebookPage = {
+            id: string;
+            name: string;
+            access_token: string;
+            instagram_business_account?: { id: string } | null;
+        };
+
         // 1. Exchange code
         const tokenData = await exchangeMetaCodeForToken(code);
         const accessToken = tokenData.access_token;
@@ -26,7 +33,7 @@ export async function GET(request: Request) {
         const userInfo = await getMetaUserInfo(accessToken);
 
         // 3. Get Pages & Instagram Accounts
-        const pages = await getFacebookPages(accessToken);
+        const pages: FacebookPage[] = await getFacebookPages(accessToken);
 
         // Identify current Publiq User
         const session = await verifySession();
@@ -59,7 +66,7 @@ export async function GET(request: Request) {
         if (pages && pages.length > 0) {
             // Store all Pages (first page becomes default)
             await Promise.all(
-                pages.map((page, index) =>
+                pages.map((page: FacebookPage, index: number) =>
                     prisma.socialAccount.create({
                         data: {
                             provider: "facebook",
@@ -115,6 +122,10 @@ export async function GET(request: Request) {
                     isDefault: true,
                 }
             });
+        }
+
+        if (!userId) {
+            return NextResponse.redirect(new URL("/auth/login?error=meta_no_user", baseUrl));
         }
 
         await createSession(userId);

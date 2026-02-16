@@ -18,13 +18,35 @@ export default async function ContentPage({
         redirect("/auth/login");
     }
 
+    type PublicationRaw = {
+        id: string;
+        platform: string;
+        status: string;
+        platformPostId: string | null;
+        views: number | null;
+        likes: number | null;
+        comments: number | null;
+    };
+
+    type ContentItemRaw = {
+        id: string;
+        title: string;
+        description: string | null;
+        mediaUrl: string;
+        mediaType: string;
+        status: string;
+        scheduledAt: Date | null;
+        createdAt: Date;
+        publications: PublicationRaw[];
+    };
+
     const items = await prisma.content.findMany({
         where: { userId: session.userId as string },
         include: { publications: true },
         orderBy: { createdAt: "desc" },
     });
 
-    const serialized = items.map((item) => ({
+    const serialized = (items as ContentItemRaw[]).map((item: ContentItemRaw) => ({
         id: item.id,
         title: item.title,
         description: item.description,
@@ -33,14 +55,14 @@ export default async function ContentPage({
         status: item.status,
         scheduledAt: item.scheduledAt?.toISOString() ?? null,
         createdAt: item.createdAt.toISOString(),
-        publications: item.publications.map((pub) => ({
+        publications: item.publications.map((pub: PublicationRaw) => ({
             id: pub.id,
             platform: pub.platform,
             status: pub.status,
             platformPostId: pub.platformPostId,
-            views: pub.views,
-            likes: pub.likes,
-            comments: pub.comments,
+            views: pub.views ?? 0,
+            likes: pub.likes ?? 0,
+            comments: pub.comments ?? 0,
         })),
     }));
 

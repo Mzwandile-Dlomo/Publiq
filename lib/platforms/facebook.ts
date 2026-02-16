@@ -37,14 +37,21 @@ export const facebookStatsProvider: PlatformStatsProvider = {
     async getStats(userId, posts) {
         if (posts.length === 0) return {};
 
+        type FacebookAccount = {
+            id: string;
+            providerId: string;
+            accessToken: string;
+            isDefault?: boolean | null;
+        };
+
         const accounts = await prisma.socialAccount.findMany({
             where: { userId, provider: "facebook" },
         });
 
         if (accounts.length === 0) return {};
 
-        const accountById = new Map(accounts.map((acc) => [acc.id, acc]));
-        const defaultAccount = accounts.find((acc) => acc.isDefault) || accounts[0];
+        const accountById = new Map((accounts as FacebookAccount[]).map((acc: FacebookAccount) => [acc.id, acc]));
+        const defaultAccount = (accounts as FacebookAccount[]).find((acc: FacebookAccount) => acc.isDefault) || (accounts as FacebookAccount[])[0];
 
         const statsMap: Record<string, import("./types").VideoStats> = {};
 

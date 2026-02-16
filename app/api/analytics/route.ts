@@ -14,12 +14,31 @@ export async function GET() {
 
         const userId = session.userId as string;
 
+        type SocialAccountProvider = { provider: string };
+        type PublicationEntry = {
+            id: string;
+            platform: string;
+            platformPostId: string | null;
+            socialAccountId: string | null;
+        };
+        type TopPublication = {
+            id: string;
+            contentId: string;
+            platform: string;
+            views: number | null;
+            likes: number | null;
+            comments: number | null;
+            publishedAt: Date | null;
+            platformPostId: string | null;
+            content: { title: string };
+        };
+
         // Get connected platforms
-        const socialAccounts = await prisma.socialAccount.findMany({
+        const socialAccounts: SocialAccountProvider[] = await prisma.socialAccount.findMany({
             where: { userId },
             select: { provider: true },
         });
-        const connectedPlatforms = socialAccounts.map((a) => a.provider);
+        const connectedPlatforms = socialAccounts.map((a: SocialAccountProvider) => a.provider);
 
         if (connectedPlatforms.length === 0) {
             const response: AnalyticsResponse = {
@@ -31,7 +50,7 @@ export async function GET() {
         }
 
         // Fetch all successful publications for connected platforms only
-        const publications = await prisma.publication.findMany({
+        const publications: PublicationEntry[] = await prisma.publication.findMany({
             where: {
                 content: { userId },
                 status: "success",
@@ -117,21 +136,21 @@ export async function GET() {
         }
 
         // Top 5 performing publications by views (connected platforms only)
-        const topPubs = await prisma.publication.findMany({
+        const topPubs: TopPublication[] = await prisma.publication.findMany({
             where: { content: { userId }, status: "success", platform: { in: connectedPlatforms } },
             orderBy: { views: "desc" },
             take: 5,
             include: { content: { select: { title: true } } },
         });
 
-        const topContent: TopContentItem[] = topPubs.map((pub) => ({
+        const topContent: TopContentItem[] = topPubs.map((pub: TopPublication) => ({
             publicationId: pub.id,
             contentId: pub.contentId,
             title: pub.content.title,
             platform: pub.platform as Platform,
-            views: pub.views,
-            likes: pub.likes,
-            comments: pub.comments,
+            views: pub.views ?? 0,
+            likes: pub.likes ?? 0,
+            comments: pub.comments ?? 0,
             publishedAt: pub.publishedAt?.toISOString() ?? null,
             platformPostId: pub.platformPostId,
         }));

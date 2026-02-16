@@ -32,7 +32,7 @@ export async function GET(req: Request) {
         const results = [];
 
         for (const content of contentsToPublish) {
-            const pendingPubs = content.publications.filter((p) => p.status === "pending");
+            const pendingPubs = content.publications.filter((p: { status: string }) => p.status === "pending");
 
             for (const publication of pendingPubs) {
                 const platform = publication.platform as Platform;
@@ -91,7 +91,7 @@ export async function GET(req: Request) {
             const contentPubs = await prisma.publication.findMany({
                 where: { contentId: content.id },
             });
-            const anySuccess = contentPubs.some((p) => p.status === "success");
+            const anySuccess = contentPubs.some((p: { status: string }) => p.status === "success");
 
             await prisma.content.update({
                 where: { id: content.id },

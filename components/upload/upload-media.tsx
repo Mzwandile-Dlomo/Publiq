@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import type { MediaType } from "@/lib/platforms/types";
 
 interface UploadMediaProps {
-    onUploadComplete: (fileUrl: string, fileKey: string, fileName: string, mediaType: MediaType) => void;
+    onUploadComplete: (fileUrl: string, fileName: string, mediaType: MediaType) => void;
 }
 
 export function UploadMedia({ onUploadComplete }: UploadMediaProps) {
@@ -57,7 +57,7 @@ export function UploadMedia({ onUploadComplete }: UploadMediaProps) {
                         if (res && res.length > 0) {
                             const file = res[0];
                             toast.success("Upload completed!");
-                            onUploadComplete(file.url, file.key, file.name, mediaType);
+                            onUploadComplete(file.url, file.name, mediaType);
                         }
                     }}
                     onUploadError={(error: Error) => {

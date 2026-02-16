@@ -108,6 +108,10 @@ export async function GET(request: Request) {
             });
         }
 
+        if (!userId) {
+            return NextResponse.redirect(new URL("/auth/login?error=tiktok_no_user", request.url));
+        }
+
         // Create/Refresh Session
         await createSession(userId);
 

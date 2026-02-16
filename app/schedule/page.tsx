@@ -14,6 +14,19 @@ export default async function SchedulePage() {
         redirect("/auth/login");
     }
 
+    type ScheduledPublication = {
+        id: string;
+        platform: string;
+        platformPostId: string | null;
+    };
+
+    type ScheduledItem = {
+        id: string;
+        title: string;
+        scheduledAt: Date | null;
+        publications: ScheduledPublication[];
+    };
+
     const scheduledItems = await prisma.content.findMany({
         where: {
             userId: session.userId as string,
@@ -27,10 +40,10 @@ export default async function SchedulePage() {
         },
     });
 
-    const scheduledDates = scheduledItems
-        .map((item) => item.scheduledAt)
-        .filter((date): date is Date => Boolean(date))
-        .map((date) => date.toISOString());
+    const scheduledDates = (scheduledItems as ScheduledItem[])
+        .map((item: ScheduledItem) => item.scheduledAt)
+        .filter((date: Date | null): date is Date => Boolean(date))
+        .map((date: Date) => date.toISOString());
 
     return (
         <div className="min-h-screen">
@@ -80,7 +93,7 @@ export default async function SchedulePage() {
                         </div>
                     ) : (
                         <div className="mt-6 space-y-3">
-                            {scheduledItems.map((item) => {
+                            {(scheduledItems as ScheduledItem[]).map((item: ScheduledItem) => {
                                 const scheduledLabel = item.scheduledAt
                                     ? new Date(item.scheduledAt).toLocaleString()
                                     : "Unscheduled";
@@ -96,7 +109,7 @@ export default async function SchedulePage() {
                                             </p>
                                             {item.publications.length > 0 && (
                                                 <div className="flex flex-wrap gap-1.5 pt-1">
-                                                    {item.publications.map((pub) => {
+                                                    {item.publications.map((pub: ScheduledPublication) => {
                                                         const config = platformConfigs[pub.platform as Platform];
                                                         return (
                                                             <span
@@ -119,8 +132,8 @@ export default async function SchedulePage() {
                                                 scheduled
                                             </span>
                                             {item.publications
-                                                .filter((pub) => pub.platformPostId)
-                                                .map((pub) => {
+                                                .filter((pub: ScheduledPublication) => pub.platformPostId)
+                                                .map((pub: ScheduledPublication) => {
                                                     const url = getPlatformPostUrl(
                                                         pub.platform as Platform,
                                                         pub.platformPostId!

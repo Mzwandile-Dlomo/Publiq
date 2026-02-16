@@ -1,4 +1,4 @@
-.PHONY: dev build start lint test test-watch typecheck ci db-generate db-push db-studio clean
+.PHONY: dev build start lint test test-watch typecheck check ci db-generate db-push db-studio clean
 
 dev:
 	npm run dev
@@ -20,6 +20,8 @@ test-watch:
 
 typecheck:
 	npx tsc --noEmit
+
+check: lint typecheck
 
 ci: lint typecheck test build
 

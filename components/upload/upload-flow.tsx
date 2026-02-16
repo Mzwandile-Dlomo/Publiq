@@ -7,10 +7,10 @@ import type { MediaType } from "@/lib/platforms/types";
 
 export function UploadFlow() {
     const [step, setStep] = useState<"upload" | "publish">("upload");
-    const [fileData, setFileData] = useState<{ url: string; key: string; name: string; mediaType: MediaType } | null>(null);
+    const [fileData, setFileData] = useState<{ url: string; name: string; mediaType: MediaType } | null>(null);
 
-    const handleUploadComplete = (url: string, key: string, name: string, mediaType: MediaType) => {
-        setFileData({ url, key, name, mediaType });
+    const handleUploadComplete = (url: string, name: string, mediaType: MediaType) => {
+        setFileData({ url, name, mediaType });
         setStep("publish");
     };
 
@@ -18,7 +18,6 @@ export function UploadFlow() {
         return (
             <PublishForm
                 fileUrl={fileData.url}
-                fileKey={fileData.key}
                 fileName={fileData.name}
                 mediaType={fileData.mediaType}
             />

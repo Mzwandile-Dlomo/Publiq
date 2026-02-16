@@ -26,8 +26,10 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { title, description, mediaUrl, mediaType, thumbnailUrl, platforms, platformAccounts } = contentSchema.parse(body);
 
+        type SocialAccountRecord = { id: string; provider: string };
+
         const accountIds = Object.values(platformAccounts || {}).filter(Boolean);
-        const accounts = accountIds.length > 0
+        const accounts: SocialAccountRecord[] = accountIds.length > 0
             ? await prisma.socialAccount.findMany({
                 where: {
                     userId: session.userId as string,
@@ -35,16 +37,16 @@ export async function POST(req: Request) {
                 },
             })
             : [];
-        const accountById = new Map(accounts.map((acc) => [acc.id, acc]));
+        const accountById = new Map(accounts.map((acc: SocialAccountRecord) => [acc.id, acc]));
 
-        const defaultAccounts = await prisma.socialAccount.findMany({
+        const defaultAccounts: SocialAccountRecord[] = await prisma.socialAccount.findMany({
             where: {
                 userId: session.userId as string,
                 provider: { in: platforms },
                 isDefault: true,
             },
         });
-        const defaultByProvider = new Map(defaultAccounts.map((acc) => [acc.provider, acc]));
+        const defaultByProvider = new Map(defaultAccounts.map((acc: SocialAccountRecord) => [acc.provider, acc]));
 
         for (const [platform, accountId] of Object.entries(platformAccounts || {})) {
             if (!platforms.includes(platform as (typeof PLATFORMS)[number])) continue;
