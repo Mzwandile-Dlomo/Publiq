@@ -71,7 +71,7 @@ describe("youtubePublisher", () => {
         const result = await youtubePublisher.publish("user-1", content);
 
         expect(mockFindFirst).toHaveBeenCalledWith({
-            where: { userId: "user-1", provider: "youtube" },
+            where: { userId: "user-1", provider: "youtube", isDefault: true },
         });
         expect(mockSetCredentials).toHaveBeenCalledWith({
             access_token: socialAccount.accessToken,
@@ -152,7 +152,10 @@ describe("youtubeStatsProvider", () => {
             },
         });
 
-        const result = await youtubeStatsProvider.getStats("user-1", ["vid-1", "vid-2"]);
+        const result = await youtubeStatsProvider.getStats("user-1", [
+            { postId: "vid-1" },
+            { postId: "vid-2" },
+        ]);
 
         expect(mockVideosList).toHaveBeenCalledWith({
             part: ["statistics"],
@@ -167,7 +170,7 @@ describe("youtubeStatsProvider", () => {
     it("returns empty stats when no account connected", async () => {
         mockFindFirst.mockResolvedValueOnce(null);
 
-        const result = await youtubeStatsProvider.getStats("user-1", ["vid-1"]);
+        const result = await youtubeStatsProvider.getStats("user-1", [{ postId: "vid-1" }]);
         expect(result).toEqual({});
     });
 
@@ -182,7 +185,7 @@ describe("youtubeStatsProvider", () => {
             data: { items: [{ id: "vid-1", statistics: null }] },
         });
 
-        const result = await youtubeStatsProvider.getStats("user-1", ["vid-1"]);
+        const result = await youtubeStatsProvider.getStats("user-1", [{ postId: "vid-1" }]);
         expect(result).toEqual({});
     });
 

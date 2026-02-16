@@ -5,6 +5,7 @@ vi.mock("@/lib/prisma", () => ({
     prisma: {
         socialAccount: {
             findFirst: vi.fn(),
+            findMany: vi.fn(),
         },
     },
 }));
@@ -18,6 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { publishFacebookVideo, publishFacebookPhoto } from "@/lib/meta";
 
 const mockFindFirst = vi.mocked(prisma.socialAccount.findFirst);
+const mockFindMany = vi.mocked(prisma.socialAccount.findMany);
 const mockPublishVideo = vi.mocked(publishFacebookVideo);
 const mockPublishPhoto = vi.mocked(publishFacebookPhoto);
 
@@ -39,17 +41,20 @@ describe("facebookPublisher", () => {
     });
 
     it("publishes a video using page credentials", async () => {
-        mockFindFirst.mockResolvedValueOnce({
+        const account = {
             accessToken: "page-token-abc",
             providerId: "page-123",
-        } as any);
+        } as any;
+
+        // First call (isDefault: true) returns the account
+        mockFindFirst.mockResolvedValueOnce(account);
 
         mockPublishVideo.mockResolvedValueOnce({ id: "video-789" });
 
         const result = await facebookPublisher.publish("user-1", content);
 
         expect(mockFindFirst).toHaveBeenCalledWith({
-            where: { userId: "user-1", provider: "facebook" },
+            where: { userId: "user-1", provider: "facebook", isDefault: true },
         });
         expect(mockPublishVideo).toHaveBeenCalledWith(
             "page-token-abc",
@@ -93,8 +98,8 @@ describe("facebookStatsProvider", () => {
     });
 
     it("returns empty object when no account is connected", async () => {
-        mockFindFirst.mockResolvedValueOnce(null);
-        const result = await facebookStatsProvider.getStats("user-1", ["post-1"]);
+        mockFindMany.mockResolvedValueOnce([]);
+        const result = await facebookStatsProvider.getStats("user-1", [{ postId: "post-1" }]);
         expect(result).toEqual({});
     });
 
@@ -104,22 +109,29 @@ describe("facebookStatsProvider", () => {
     });
 
     it("fetches stats from Facebook Graph API", async () => {
-        mockFindFirst.mockResolvedValueOnce({
-            accessToken: "page-token-abc",
-            providerId: "page-123",
-        } as any);
+        mockFindMany.mockResolvedValueOnce([
+            { id: "acc-1", accessToken: "page-token-abc", providerId: "page-123", isDefault: true },
+        ] as any);
 
-        const mockResponse = {
-            ok: true,
-            json: vi.fn().mockResolvedValue({
-                views: 1500,
-                likes: { summary: { total_count: 42 } },
-                comments: { summary: { total_count: 7 } },
-            }),
-        };
-        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockResponse));
+        const mockFetchFn = vi.fn()
+            // reactions call
+            .mockResolvedValueOnce({
+                ok: true,
+                json: vi.fn().mockResolvedValue({ summary: { total_count: 42 } }),
+            })
+            // comments call
+            .mockResolvedValueOnce({
+                ok: true,
+                json: vi.fn().mockResolvedValue({ summary: { total_count: 7 } }),
+            })
+            // insights call
+            .mockResolvedValueOnce({
+                ok: true,
+                json: vi.fn().mockResolvedValue({ data: [{ values: [{ value: 1500 }] }] }),
+            });
+        vi.stubGlobal("fetch", mockFetchFn);
 
-        const result = await facebookStatsProvider.getStats("user-1", ["video-789"]);
+        const result = await facebookStatsProvider.getStats("user-1", [{ postId: "video-789" }]);
 
         expect(result).toEqual({
             "video-789": {
@@ -133,10 +145,9 @@ describe("facebookStatsProvider", () => {
     });
 
     it("skips posts that return API errors", async () => {
-        mockFindFirst.mockResolvedValueOnce({
-            accessToken: "page-token-abc",
-            providerId: "page-123",
-        } as any);
+        mockFindMany.mockResolvedValueOnce([
+            { id: "acc-1", accessToken: "page-token-abc", providerId: "page-123", isDefault: true },
+        ] as any);
 
         const mockResponse = {
             ok: true,
@@ -146,8 +157,9 @@ describe("facebookStatsProvider", () => {
         };
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockResponse));
 
-        const result = await facebookStatsProvider.getStats("user-1", ["bad-id"]);
-        expect(result).toEqual({});
+        const result = await facebookStatsProvider.getStats("user-1", [{ postId: "bad-id" }]);
+        // All three API calls return errors, so likes/comments/views are all 0
+        expect(result).toEqual({ "bad-id": { views: 0, likes: 0, comments: 0 } });
 
         vi.unstubAllGlobals();
     });

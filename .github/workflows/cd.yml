@@ -1,0 +1,14 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+# TODO: Configure deployment target (Netlify, Vercel, etc.)
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Deploy step placeholder"
