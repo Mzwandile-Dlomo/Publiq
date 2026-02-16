@@ -114,6 +114,21 @@ export async function publishFacebookPhoto(
     return { id: data.post_id || data.id };
 }
 
+export async function deleteFromFacebook(
+    pageAccessToken: string,
+    postId: string
+) {
+    const url = `https://graph.facebook.com/v19.0/${postId}?access_token=${pageAccessToken}`;
+    const response = await fetch(url, { method: "DELETE" });
+    const data = await response.json();
+
+    if (data.error) {
+        throw new Error(data.error.message);
+    }
+
+    return data;
+}
+
 export async function publishInstagramImage(
     pageAccessToken: string,
     igUserId: string,
