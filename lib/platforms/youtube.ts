@@ -2,7 +2,7 @@ import { google } from "googleapis";
 import { oauth2Client } from "../google";
 import { prisma } from "../prisma";
 import { Readable } from "stream";
-import type { PlatformPublisher, PlatformStatsProvider, VideoStats } from "./types";
+import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider, PlatformComment, VideoStats } from "./types";
 
 export const youtubePublisher: PlatformPublisher = {
     platform: "youtube",
@@ -104,5 +104,56 @@ export const youtubeStatsProvider: PlatformStatsProvider = {
         }
 
         return statsMap;
+    },
+};
+
+export const youtubeCommentsProvider: PlatformCommentsProvider = {
+    platform: "youtube",
+
+    async getComments(userId, postId) {
+        const socialAccount = await prisma.socialAccount.findFirst({
+            where: { userId, provider: "youtube" },
+        });
+
+        if (!socialAccount) return [];
+
+        oauth2Client.setCredentials({
+            access_token: socialAccount.accessToken,
+            refresh_token: socialAccount.refreshToken,
+            expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
+        });
+
+        const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+
+        try {
+            const res = await youtube.commentThreads.list({
+                part: ["snippet", "replies"],
+                videoId: postId,
+                maxResults: 50,
+                order: "relevance",
+            });
+
+            return (res.data.items || []).map((thread): PlatformComment => {
+                const top = thread.snippet!.topLevelComment!.snippet!;
+                return {
+                    id: thread.id!,
+                    authorName: top.authorDisplayName || "Unknown",
+                    authorAvatar: top.authorProfileImageUrl || undefined,
+                    text: top.textDisplay || "",
+                    timestamp: top.publishedAt || new Date().toISOString(),
+                    likeCount: top.likeCount || 0,
+                    replies: thread.replies?.comments?.map((r): PlatformComment => ({
+                        id: r.id!,
+                        authorName: r.snippet!.authorDisplayName || "Unknown",
+                        authorAvatar: r.snippet!.authorProfileImageUrl || undefined,
+                        text: r.snippet!.textDisplay || "",
+                        timestamp: r.snippet!.publishedAt || new Date().toISOString(),
+                        likeCount: r.snippet!.likeCount || 0,
+                    })),
+                };
+            });
+        } catch {
+            return [];
+        }
     },
 };

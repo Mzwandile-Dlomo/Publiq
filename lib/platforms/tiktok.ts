@@ -1,6 +1,6 @@
 import { uploadToTikTok } from "@/lib/tiktok";
 import { prisma } from "@/lib/prisma";
-import type { PlatformPublisher, PlatformStatsProvider } from "./types";
+import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider } from "./types";
 
 export const tiktokPublisher: PlatformPublisher = {
     platform: "tiktok",
@@ -35,5 +35,14 @@ export const tiktokStatsProvider: PlatformStatsProvider = {
     async getStats() {
         // TODO: Implement TikTok Video Insights API
         return {};
+    },
+};
+
+export const tiktokCommentsProvider: PlatformCommentsProvider = {
+    platform: "tiktok",
+
+    async getComments() {
+        // TODO: Implement TikTok Comments API
+        return [];
     },
 };

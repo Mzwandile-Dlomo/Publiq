@@ -1,6 +1,6 @@
 import { publishInstagramReel, publishInstagramImage } from "@/lib/meta";
 import { prisma } from "@/lib/prisma";
-import type { PlatformPublisher, PlatformStatsProvider } from "./types";
+import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider, PlatformComment } from "./types";
 
 export const instagramPublisher: PlatformPublisher = {
     platform: "instagram",
@@ -77,5 +77,46 @@ export const instagramStatsProvider: PlatformStatsProvider = {
         );
 
         return statsMap;
+    },
+};
+
+export const instagramCommentsProvider: PlatformCommentsProvider = {
+    platform: "instagram",
+
+    async getComments(userId, postId) {
+        const account = await prisma.socialAccount.findFirst({
+            where: { userId, provider: "instagram" },
+        });
+
+        if (!account) return [];
+
+        try {
+            const url = `https://graph.facebook.com/v19.0/${postId}/comments?fields=id,username,text,timestamp,like_count,replies{id,username,text,timestamp,like_count}&limit=50&access_token=${account.accessToken}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.error || !data.data) return [];
+
+            return data.data.map((c: Record<string, unknown>): PlatformComment => ({
+                id: c.id as string,
+                authorName: (c.username as string) || "Unknown",
+                text: (c.text as string) || "",
+                timestamp: c.timestamp as string,
+                likeCount: (c.like_count as number) || 0,
+                replies: (c.replies as Record<string, unknown> | undefined)?.data
+                    ? ((c.replies as Record<string, unknown>).data as Record<string, unknown>[]).map(
+                        (r: Record<string, unknown>): PlatformComment => ({
+                            id: r.id as string,
+                            authorName: (r.username as string) || "Unknown",
+                            text: (r.text as string) || "",
+                            timestamp: r.timestamp as string,
+                            likeCount: (r.like_count as number) || 0,
+                        })
+                    )
+                    : undefined,
+            }));
+        } catch {
+            return [];
+        }
     },
 };

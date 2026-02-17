@@ -1,6 +1,6 @@
 import { publishFacebookVideo, publishFacebookPhoto } from "@/lib/meta";
 import { prisma } from "@/lib/prisma";
-import type { PlatformPublisher, PlatformStatsProvider } from "./types";
+import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider, PlatformComment } from "./types";
 
 export const facebookPublisher: PlatformPublisher = {
     platform: "facebook",
@@ -119,5 +119,51 @@ export const facebookStatsProvider: PlatformStatsProvider = {
         );
 
         return statsMap;
+    },
+};
+
+export const facebookCommentsProvider: PlatformCommentsProvider = {
+    platform: "facebook",
+
+    async getComments(userId, postId, socialAccountId) {
+        const accounts = await prisma.socialAccount.findMany({
+            where: { userId, provider: "facebook" },
+        });
+
+        if (accounts.length === 0) return [];
+
+        const account = socialAccountId
+            ? accounts.find((a) => a.id === socialAccountId) || accounts.find((a) => a.isDefault) || accounts[0]
+            : accounts.find((a) => a.isDefault) || accounts[0];
+
+        const pageId = account.providerId;
+        const queryId = postId.includes("_") ? postId : `${pageId}_${postId}`;
+
+        try {
+            const url = `https://graph.facebook.com/v21.0/${queryId}/comments?fields=id,from,message,created_time,like_count,comments{id,from,message,created_time,like_count}&limit=50&access_token=${account.accessToken}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.error || !data.data) return [];
+
+            return data.data.map((c: Record<string, unknown>): PlatformComment => ({
+                id: c.id as string,
+                authorName: (c.from as Record<string, string>)?.name || "Unknown",
+                text: (c.message as string) || "",
+                timestamp: c.created_time as string,
+                likeCount: (c.like_count as number) || 0,
+                replies: ((c.comments as Record<string, unknown>)?.data as Record<string, unknown>[] | undefined)?.map(
+                    (r: Record<string, unknown>): PlatformComment => ({
+                        id: r.id as string,
+                        authorName: (r.from as Record<string, string>)?.name || "Unknown",
+                        text: (r.message as string) || "",
+                        timestamp: r.created_time as string,
+                        likeCount: (r.like_count as number) || 0,
+                    })
+                ),
+            }));
+        } catch {
+            return [];
+        }
     },
 };
