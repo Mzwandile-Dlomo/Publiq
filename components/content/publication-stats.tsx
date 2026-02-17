@@ -12,12 +12,20 @@ interface PublicationWithStats {
     comments: number;
 }
 
-export function PublicationStats({ publications }: { publications: PublicationWithStats[] }) {
+export function PublicationStats({
+    publications,
+    onViewComments,
+}: {
+    publications: PublicationWithStats[];
+    onViewComments?: () => void;
+}) {
     const withStats = publications.filter(
         (p) => p.status === "success" && (p.views + p.likes + p.comments) > 0
     );
 
     if (withStats.length === 0) return null;
+
+    const hasComments = withStats.some((p) => p.comments > 0);
 
     return (
         <div className="mt-2 space-y-1">
@@ -39,13 +47,33 @@ export function PublicationStats({ publications }: { publications: PublicationWi
                             <ThumbsUp className="h-3 w-3" />
                             {pub.likes.toLocaleString()}
                         </span>
-                        <span className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            {pub.comments.toLocaleString()}
-                        </span>
+                        {pub.comments > 0 && onViewComments ? (
+                            <button
+                                type="button"
+                                onClick={onViewComments}
+                                className="flex items-center gap-1 underline-offset-2 hover:underline hover:text-foreground transition-colors"
+                            >
+                                <MessageSquare className="h-3 w-3" />
+                                {pub.comments.toLocaleString()}
+                            </button>
+                        ) : (
+                            <span className="flex items-center gap-1">
+                                <MessageSquare className="h-3 w-3" />
+                                {pub.comments.toLocaleString()}
+                            </span>
+                        )}
                     </div>
                 );
             })}
+            {hasComments && onViewComments && (
+                <button
+                    type="button"
+                    onClick={onViewComments}
+                    className="mt-1 text-xs text-muted-foreground underline-offset-2 hover:underline hover:text-foreground transition-colors"
+                >
+                    View comments
+                </button>
+            )}
         </div>
     );
 }
