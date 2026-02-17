@@ -81,7 +81,7 @@ export default async function SchedulePage() {
                             <div className="mt-4">
                                 <Link href="/upload">
                                     <Button variant="outline" className="rounded-full">
-                                        Upload a content
+                                        Upload content
                                     </Button>
                                 </Link>
                             </div>
