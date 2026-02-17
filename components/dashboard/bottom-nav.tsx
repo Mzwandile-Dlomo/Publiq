@@ -35,7 +35,7 @@ export function BottomNav() {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className="relative -top-5"
+                                className="relative -top-5 flex h-full w-full items-center justify-center"
                             >
                                 <div className="flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95">
                                     <Icon className="w-6 h-6" />

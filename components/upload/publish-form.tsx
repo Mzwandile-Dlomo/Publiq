@@ -90,6 +90,7 @@ export function PublishForm({ fileUrl, fileName, mediaType }: PublishFormProps) 
     }, [selectedPlatforms, facebookPages, selectedFacebookPageId]);
 
     async function onSave(data: MetadataFormValues, status: 'draft' | 'scheduled' = 'draft') {
+        if (isSaving || isPublishing || isScheduling) return null;
         if (selectedPlatforms.length === 0) {
             toast.error("Please select at least one platform");
             return null;
@@ -141,6 +142,7 @@ export function PublishForm({ fileUrl, fileName, mediaType }: PublishFormProps) 
     }
 
     async function onSchedule() {
+        if (isSaving || isPublishing || isScheduling) return;
         if (!date) {
             toast.error("Please select a date and time");
             return;
@@ -151,6 +153,7 @@ export function PublishForm({ fileUrl, fileName, mediaType }: PublishFormProps) 
     }
 
     async function onPublish() {
+        if (isSaving || isPublishing || isScheduling) return;
         if (selectedPlatforms.length === 0) {
             toast.error("Please select at least one platform");
             return;
