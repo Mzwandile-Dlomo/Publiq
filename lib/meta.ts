@@ -21,14 +21,16 @@ export const META_SCOPES = [
     "instagram_content_publish"
 ];
 
-export function getMetaAuthUrl() {
+export function getMetaAuthUrl(redirectUri?: string) {
     const state = Math.random().toString(36).substring(7);
-    const url = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_CLIENT_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&state=${state}&scope=${META_SCOPES.join(",")}`;
+    const uri = redirectUri || META_REDIRECT_URI;
+    const url = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_CLIENT_ID}&redirect_uri=${encodeURIComponent(uri)}&state=${state}&scope=${META_SCOPES.join(",")}`;
     return url;
 }
 
-export async function exchangeMetaCodeForToken(code: string) {
-    const url = `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${META_CLIENT_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&client_secret=${META_CLIENT_SECRET}&code=${code}`;
+export async function exchangeMetaCodeForToken(code: string, redirectUri?: string) {
+    const uri = redirectUri || META_REDIRECT_URI;
+    const url = `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${META_CLIENT_ID}&redirect_uri=${encodeURIComponent(uri)}&client_secret=${META_CLIENT_SECRET}&code=${code}`;
 
     const response = await fetch(url);
     const data = await response.json();
