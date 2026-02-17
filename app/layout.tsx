@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/navbar";
 import { BottomNav } from "@/components/dashboard/bottom-nav";
 import { PWARegister } from "@/components/pwa-register";
+import { getOptionalUser } from "@/lib/auth-user";
 
 const sora = Sora({
   variable: "--font-sora",
@@ -43,11 +44,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getOptionalUser();
+
   return (
     <html lang="en">
       <body
@@ -58,9 +61,11 @@ export default function RootLayout({
         />
         <Navbar />
         {children}
-        <div className="md:hidden">
-          <BottomNav />
-        </div>
+        {user && (
+          <div className="md:hidden">
+            <BottomNav />
+          </div>
+        )}
         <Toaster />
         <PWARegister />
       </body>
