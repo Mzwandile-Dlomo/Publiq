@@ -1,8 +1,33 @@
 import { google } from "googleapis";
-import { oauth2Client } from "./google";
+import { createOAuthClient } from "./google";
 import { prisma } from "./prisma";
 import { refreshYouTubeToken } from "./token-refresh";
 import { Readable } from "stream";
+
+function createAuthedClient(account: { accessToken: string; refreshToken: string | null; expiresAt: number | null }) {
+    const client = createOAuthClient();
+    client.setCredentials({
+        access_token: account.accessToken,
+        refresh_token: account.refreshToken,
+        expiry_date: account.expiresAt ? account.expiresAt * 1000 : undefined,
+    });
+
+    client.on("tokens", async (tokens) => {
+        const updateData: Record<string, unknown> = {};
+        if (tokens.access_token) updateData.accessToken = tokens.access_token;
+        if (tokens.refresh_token) updateData.refreshToken = tokens.refresh_token;
+        if (tokens.expiry_date) updateData.expiresAt = Math.floor(tokens.expiry_date / 1000);
+
+        if (Object.keys(updateData).length > 0) {
+            await prisma.socialAccount.updateMany({
+                where: { accessToken: account.accessToken, provider: "youtube" },
+                data: updateData,
+            });
+        }
+    });
+
+    return client;
+}
 
 export async function deleteFromYouTube(userId: string, videoId: string) {
     const socialAccount = await prisma.socialAccount.findFirst({
@@ -14,14 +39,8 @@ export async function deleteFromYouTube(userId: string, videoId: string) {
     }
 
     const refreshed = await refreshYouTubeToken(socialAccount);
-
-    oauth2Client.setCredentials({
-        access_token: refreshed.accessToken,
-        refresh_token: refreshed.refreshToken,
-        expiry_date: refreshed.expiresAt ? refreshed.expiresAt * 1000 : undefined,
-    });
-
-    const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+    const client = createAuthedClient(refreshed);
+    const youtube = google.youtube({ version: "v3", auth: client });
 
     await youtube.videos.delete({ id: videoId });
 }
@@ -42,14 +61,8 @@ export async function getYouTubeVideoStats(
     }
 
     const refreshed = await refreshYouTubeToken(socialAccount);
-
-    oauth2Client.setCredentials({
-        access_token: refreshed.accessToken,
-        refresh_token: refreshed.refreshToken,
-        expiry_date: refreshed.expiresAt ? refreshed.expiresAt * 1000 : undefined,
-    });
-
-    const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+    const client = createAuthedClient(refreshed);
+    const youtube = google.youtube({ version: "v3", auth: client });
 
     const res = await youtube.videos.list({
         part: ["statistics"],
@@ -92,14 +105,8 @@ export async function uploadToYouTube(
 
     // 2. Refresh token if expired, then set credentials
     const refreshed = await refreshYouTubeToken(socialAccount);
-
-    oauth2Client.setCredentials({
-        access_token: refreshed.accessToken,
-        refresh_token: refreshed.refreshToken,
-        expiry_date: refreshed.expiresAt ? refreshed.expiresAt * 1000 : undefined,
-    });
-
-    const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+    const client = createAuthedClient(refreshed);
+    const youtube = google.youtube({ version: "v3", auth: client });
 
     // 3. Fetch the file stream
     const response = await fetch(fileUrl);

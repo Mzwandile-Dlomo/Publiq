@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { oauth2Client } from "./google";
+import { createOAuthClient } from "./google";
 import { TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET } from "./tiktok";
 import { META_CLIENT_ID, META_CLIENT_SECRET } from "./meta";
 
@@ -42,11 +42,12 @@ export async function refreshYouTubeToken(
         throw new Error("YouTube token expired and no refresh token available. Please reconnect your YouTube account.");
     }
 
-    oauth2Client.setCredentials({
+    const client = createOAuthClient();
+    client.setCredentials({
         refresh_token: account.refreshToken,
     });
 
-    const { credentials } = await oauth2Client.refreshAccessToken();
+    const { credentials } = await client.refreshAccessToken();
 
     const newAccessToken = credentials.access_token!;
     const newExpiresAt = credentials.expiry_date

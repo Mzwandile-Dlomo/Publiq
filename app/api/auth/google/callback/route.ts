@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getGoogleUser, oauth2Client } from "@/lib/google";
+import { getGoogleUser, createOAuthClient } from "@/lib/google";
 import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
 import { prisma } from "@/lib/prisma";
@@ -23,8 +23,8 @@ export async function GET(req: Request) {
     }
 
     try {
-        const { tokens } = await oauth2Client.getToken(code);
-        oauth2Client.setCredentials(tokens);
+        const client = createOAuthClient();
+        const { tokens } = await client.getToken(code);
         const userInfo = await getGoogleUser(tokens);
 
         // Save to database
