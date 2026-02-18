@@ -6,6 +6,7 @@ import { platformConfigs, type Platform } from "@/lib/platforms";
 import { DeleteContentButton } from "@/components/dashboard/delete-content-button";
 import { EditContentDialog } from "@/components/content/edit-content-dialog";
 import { PublicationStats } from "@/components/content/publication-stats";
+import { CommentsDialog } from "@/components/content/comments-dialog";
 
 type ContentItem = {
     id: string;
@@ -48,6 +49,7 @@ export function ContentList({
         : "all";
     const [filter, setFilter] = useState<StatusFilter>(startingFilter);
     const [editItem, setEditItem] = useState<ContentItem | null>(null);
+    const [commentsItem, setCommentsItem] = useState<ContentItem | null>(null);
 
     const filtered = filter === "all"
         ? items
@@ -123,7 +125,10 @@ export function ContentList({
                                     )}
                                 </div>
                                 {item.status === "published" && (
-                                    <PublicationStats publications={item.publications} />
+                                    <PublicationStats
+                                        publications={item.publications}
+                                        onViewComments={() => setCommentsItem(item)}
+                                    />
                                 )}
                             </div>
 
@@ -147,6 +152,13 @@ export function ContentList({
             <EditContentDialog
                 item={editItem}
                 onClose={() => setEditItem(null)}
+            />
+
+            <CommentsDialog
+                contentId={commentsItem?.id ?? ""}
+                contentTitle={commentsItem?.title ?? ""}
+                open={!!commentsItem}
+                onOpenChange={(open) => !open && setCommentsItem(null)}
             />
         </>
     );

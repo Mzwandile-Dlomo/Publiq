@@ -25,7 +25,7 @@
 - [ ] Video Upload & Storage
 - [ ] Publish to YouTube (Data API v3)
 - [ ] Post Scheduling
-- [ ] Stripe Subscription Integration
+- [ ] PayFast Subscription Integration
 - [ ] Basic Analytics
 
 ### Phase 2: Platform Expansion
@@ -39,6 +39,19 @@
 - [ ] Campaign Management
 - [ ] AI-driven Analytics & Content Optimization
 
-## 📖 Documentation
+## Scheduled Publishing (Cron)
 
-For detailed implementation phases and technical plans, see [implementation_plan.md](.gemini/antigravity/brain/96e0d508-e0a9-4de0-8daa-369a7b5cdf37/implementation_plan.md).
+Publiq uses a cron endpoint (`/api/cron/publish`) to automatically publish scheduled content. The endpoint checks for any content with a `scheduled` status whose `scheduledAt` time has passed, and publishes it to the configured platforms.
+
+### Setup
+
+1. Add a `CRON_SECRET` environment variable to your Netlify site (use a URL-safe value, e.g. `openssl rand -hex 32`).
+2. Create a free cron job at [cron-job.org](https://cron-job.org) (or any external cron service) with:
+   - **URL**: `https://<your-site>.netlify.app/api/cron/publish?key=<CRON_SECRET>`
+   - **Method**: GET
+   - **Schedule**: Every 5 minutes (or more frequent if needed)
+3. The endpoint processes all users' scheduled content in a single run — no per-user configuration is needed.
+
+## Documentation
+
+For detailed implementation phases and technical plans, see [docs/implementation_plan.md](docs/implementation_plan.md).

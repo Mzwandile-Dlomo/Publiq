@@ -87,6 +87,9 @@ export async function Navbar() {
                     </>
                 ) : (
                     <>
+                        <Link href="/pricing">
+                            Pricing
+                        </Link>
                         <Link
                             href="/auth/login"
                             className="rounded-full border border-border px-4 py-2 text-foreground transition hover:border-foreground/50"

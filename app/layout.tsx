@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist_Mono, Sora } from "next/font/google";
 import "./globals.css";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
@@ -7,6 +7,8 @@ import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/navbar";
 import { BottomNav } from "@/components/dashboard/bottom-nav";
+import { PWARegister } from "@/components/pwa-register";
+import { getOptionalUser } from "@/lib/auth-user";
 
 const sora = Sora({
   variable: "--font-sora",
@@ -23,20 +25,32 @@ const fraunces = Fraunces({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#000000",
+};
+
 export const metadata: Metadata = {
   title: "Publiq",
-  description: "",
+  description: "Publish everywhere — schedule and distribute content across platforms.",
+  manifest: "/manifest.json",
   icons: {
     icon: "/publiq.png",
     apple: "/publiq.png",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Publiq",
+  },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getOptionalUser();
+
   return (
     <html lang="en">
       <body
@@ -47,10 +61,13 @@ export default function RootLayout({
         />
         <Navbar />
         {children}
-        <div className="md:hidden">
-          <BottomNav />
-        </div>
+        {user && (
+          <div className="md:hidden">
+            <BottomNav />
+          </div>
+        )}
         <Toaster />
+        <PWARegister />
       </body>
     </html>
   );

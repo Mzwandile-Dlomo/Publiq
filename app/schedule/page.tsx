@@ -35,10 +35,12 @@ export default async function SchedulePage() {
         },
     });
 
-    const scheduledDates = (scheduledItems as ScheduledItem[])
-        .map((item: ScheduledItem) => item.scheduledAt)
-        .filter((date: Date | null): date is Date => Boolean(date))
-        .map((date: Date) => date.toISOString());
+    const serializedItems = (scheduledItems as ScheduledItem[]).map((item) => ({
+        id: item.id,
+        title: item.title,
+        scheduledAt: item.scheduledAt ? item.scheduledAt.toISOString() : null,
+        platforms: item.publications.map((pub) => pub.platform),
+    }));
 
     return (
         <div className="min-h-screen">
@@ -62,7 +64,7 @@ export default async function SchedulePage() {
                 </div>
 
                 <div className="mt-12">
-                    <ScheduleCalendar scheduledDates={scheduledDates} />
+                    <ScheduleCalendar scheduledItems={serializedItems} />
                 </div>
 
                 <div className="mt-12">
@@ -81,7 +83,7 @@ export default async function SchedulePage() {
                             <div className="mt-4">
                                 <Link href="/upload">
                                     <Button variant="outline" className="rounded-full">
-                                        Upload a content
+                                        Upload content
                                     </Button>
                                 </Link>
                             </div>

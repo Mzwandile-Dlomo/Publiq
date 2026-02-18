@@ -56,9 +56,11 @@ export function MobileNav({
                         </button>
                     </div>
                     <nav className="mt-10 flex flex-col items-center gap-4 text-sm font-medium">
-                        <NavLink href="/dashboard" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
-                            Dashboard
-                        </NavLink>
+                        {session && (
+                            <NavLink href="/dashboard" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
+                                Dashboard
+                            </NavLink>
+                        )}
                         <NavLink href="/pricing" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
                             Pricing
                         </NavLink>

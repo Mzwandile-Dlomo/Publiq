@@ -5,6 +5,9 @@ import { NextResponse } from "next/server";
 import { createSession, verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
 
+const INSTAGRAM_REDIRECT_URI =
+    process.env.INSTAGRAM_REDIRECT_URI || "http://localhost:3000/api/auth/instagram/callback";
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
@@ -12,7 +15,7 @@ export async function GET(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (error) {
-        return NextResponse.redirect(new URL("/auth/login?error=meta_access_denied", baseUrl));
+        return NextResponse.redirect(new URL("/auth/login?error=instagram_access_denied", baseUrl));
     }
 
     if (!code) {
@@ -27,8 +30,8 @@ export async function GET(request: Request) {
             instagram_business_account?: { id: string } | null;
         };
 
-        // 1. Exchange code for short-lived token
-        const tokenData = await exchangeMetaCodeForToken(code);
+        // 1. Exchange code using the Instagram-specific redirect URI
+        const tokenData = await exchangeMetaCodeForToken(code, INSTAGRAM_REDIRECT_URI);
 
         // 2. Exchange short-lived token for long-lived token (~60 days)
         const longLived = await exchangeMetaForLongLivedToken(tokenData.access_token);
@@ -38,10 +41,11 @@ export async function GET(request: Request) {
         // 3. Get User Info
         const userInfo = await getMetaUserInfo(accessToken);
 
-        // 4. Get Pages & Instagram Accounts (page tokens from long-lived user token are non-expiring)
+        // 4. Get Pages & find linked Instagram Business accounts (page tokens from long-lived user token are non-expiring)
         const pages: FacebookPage[] = await getFacebookPages(accessToken);
+        console.log("Instagram OAuth - Pages returned:", JSON.stringify(pages, null, 2));
 
-        // Identify current Publiq User
+        // Identify current Publiq user
         const session = await verifySession();
         let userId = session?.userId as string | undefined;
 
@@ -53,7 +57,6 @@ export async function GET(request: Request) {
         }
 
         if (!userId) {
-            // Create new user
             const newUser = await prisma.user.create({
                 data: {
                     email: userInfo.email || `${userInfo.id}@facebook.social`,
@@ -64,78 +67,64 @@ export async function GET(request: Request) {
             userId = newUser.id;
         }
 
-        // Remove any old facebook connection for this user (user-level or previous page)
-        await prisma.socialAccount.deleteMany({
-            where: { userId, provider: "facebook" }
-        });
+        // Collect Instagram Business accounts from pages
+        let foundInstagram = false;
 
         if (pages && pages.length > 0) {
-            // Store all Pages (first page becomes default)
-            await Promise.all(
-                pages.map((page: FacebookPage, index: number) =>
-                    prisma.socialAccount.create({
-                        data: {
-                            provider: "facebook",
-                            providerId: page.id,
-                            userId: userId,
-                            accessToken: page.access_token,
-                            expiresAt: tokenExpiresAt,
-                            firstName: page.name,
-                            name: page.name,
-                            email: userInfo.email,
-                            avatarUrl: `https://graph.facebook.com/${page.id}/picture`,
-                            isDefault: index === 0,
-                        }
-                    })
-                )
-            );
+            for (const page of pages) {
+                if (page.instagram_business_account) {
+                    const igId = page.instagram_business_account.id;
 
-            // Store Instagram business accounts if linked to any page
-            for (const p of pages) {
-                if (p.instagram_business_account) {
+                    // Fetch Instagram username and profile picture
+                    let igName = "Instagram Business";
+                    let igAvatar = "";
+                    try {
+                        const igRes = await fetch(
+                            `https://graph.facebook.com/v19.0/${igId}?fields=username,profile_picture_url&access_token=${page.access_token}`
+                        );
+                        const igData = await igRes.json();
+                        if (igData.username) igName = `@${igData.username}`;
+                        if (igData.profile_picture_url) igAvatar = igData.profile_picture_url;
+                    } catch {
+                        // Fall back to defaults
+                    }
+
                     await prisma.socialAccount.upsert({
                         where: {
                             provider_providerId: {
                                 provider: "instagram",
-                                providerId: p.instagram_business_account.id
+                                providerId: igId,
                             }
                         },
                         update: {
-                            accessToken: p.access_token,
+                            accessToken: page.access_token,
                             expiresAt: tokenExpiresAt,
                             userId: userId,
+                            firstName: igName,
+                            name: igName,
+                            avatarUrl: igAvatar,
                         },
                         create: {
                             provider: "instagram",
-                            providerId: p.instagram_business_account.id,
+                            providerId: igId,
                             userId: userId,
-                            accessToken: p.access_token,
+                            accessToken: page.access_token,
                             expiresAt: tokenExpiresAt,
-                            firstName: "Instagram Business",
-                            avatarUrl: "",
+                            firstName: igName,
+                            name: igName,
+                            avatarUrl: igAvatar,
+                            isDefault: true,
                         }
                     });
+                    foundInstagram = true;
                 }
             }
-        } else {
-            // No pages — store user account for connection display (publishing won't work)
-            await prisma.socialAccount.create({
-                data: {
-                    provider: "facebook",
-                    providerId: userInfo.id,
-                    userId: userId,
-                    accessToken: accessToken,
-                    expiresAt: tokenExpiresAt,
-                    firstName: userInfo.name,
-                    email: userInfo.email,
-                    avatarUrl: userInfo.picture?.data?.url || `https://graph.facebook.com/${userInfo.id}/picture`,
-                    isDefault: true,
-                }
-            });
         }
 
-        if (!userId) {
-            return NextResponse.redirect(new URL("/auth/login?error=meta_no_user", baseUrl));
+        if (!foundInstagram) {
+            return NextResponse.redirect(
+                new URL("/dashboard?error=no_instagram_business", baseUrl)
+            );
         }
 
         await createSession(userId);
@@ -143,7 +132,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL("/dashboard", baseUrl));
 
     } catch (error) {
-        console.error("Meta Callback Error:", error);
-        return NextResponse.redirect(new URL("/auth/login?error=meta_callback_failed", baseUrl));
+        console.error("Instagram Callback Error:", error);
+        return NextResponse.redirect(new URL("/auth/login?error=instagram_callback_failed", baseUrl));
     }
 }

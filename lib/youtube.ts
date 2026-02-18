@@ -1,7 +1,33 @@
 import { google } from "googleapis";
-import { oauth2Client } from "./google";
+import { createOAuthClient } from "./google";
 import { prisma } from "./prisma";
+import { refreshYouTubeToken } from "./token-refresh";
 import { Readable } from "stream";
+
+function createAuthedClient(account: { accessToken: string; refreshToken: string | null; expiresAt: number | null }) {
+    const client = createOAuthClient();
+    client.setCredentials({
+        access_token: account.accessToken,
+        refresh_token: account.refreshToken,
+        expiry_date: account.expiresAt ? account.expiresAt * 1000 : undefined,
+    });
+
+    client.on("tokens", async (tokens) => {
+        const updateData: Record<string, unknown> = {};
+        if (tokens.access_token) updateData.accessToken = tokens.access_token;
+        if (tokens.refresh_token) updateData.refreshToken = tokens.refresh_token;
+        if (tokens.expiry_date) updateData.expiresAt = Math.floor(tokens.expiry_date / 1000);
+
+        if (Object.keys(updateData).length > 0) {
+            await prisma.socialAccount.updateMany({
+                where: { accessToken: account.accessToken, provider: "youtube" },
+                data: updateData,
+            });
+        }
+    });
+
+    return client;
+}
 
 export async function deleteFromYouTube(userId: string, videoId: string) {
     const socialAccount = await prisma.socialAccount.findFirst({
@@ -12,13 +38,9 @@ export async function deleteFromYouTube(userId: string, videoId: string) {
         throw new Error("No YouTube account connected");
     }
 
-    oauth2Client.setCredentials({
-        access_token: socialAccount.accessToken,
-        refresh_token: socialAccount.refreshToken,
-        expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
-    });
-
-    const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+    const refreshed = await refreshYouTubeToken(socialAccount);
+    const client = createAuthedClient(refreshed);
+    const youtube = google.youtube({ version: "v3", auth: client });
 
     await youtube.videos.delete({ id: videoId });
 }
@@ -38,13 +60,9 @@ export async function getYouTubeVideoStats(
         throw new Error("No YouTube account connected");
     }
 
-    oauth2Client.setCredentials({
-        access_token: socialAccount.accessToken,
-        refresh_token: socialAccount.refreshToken,
-        expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
-    });
-
-    const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+    const refreshed = await refreshYouTubeToken(socialAccount);
+    const client = createAuthedClient(refreshed);
+    const youtube = google.youtube({ version: "v3", auth: client });
 
     const res = await youtube.videos.list({
         part: ["statistics"],
@@ -85,21 +103,10 @@ export async function uploadToYouTube(
         throw new Error("No YouTube account connected");
     }
 
-    // 2. Set Credentials & Refresh if needed
-    oauth2Client.setCredentials({
-        access_token: socialAccount.accessToken,
-        refresh_token: socialAccount.refreshToken,
-        expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
-    });
-
-    // Check if token needs refresh (handled by googleapis mostly, but we should handle the update callback if we want to store new tokens)
-    // Actually, googleapis auto-refreshes if refresh_token is present.
-    // We should listen to 'tokens' event to save new tokens, or just let it handle it in memory for this request.
-    // For robustness, we should manually check or check if googleapis provides a way to get refreshed tokens back.
-
-    // A simple way is to force refresh if expired, but let's try standard usage first.
-
-    const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+    // 2. Refresh token if expired, then set credentials
+    const refreshed = await refreshYouTubeToken(socialAccount);
+    const client = createAuthedClient(refreshed);
+    const youtube = google.youtube({ version: "v3", auth: client });
 
     // 3. Fetch the file stream
     const response = await fetch(fileUrl);

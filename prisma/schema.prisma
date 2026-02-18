@@ -82,8 +82,7 @@ model Publication {
 model Subscription {
   id              String   @id @default(cuid())
   userId          String   @unique
-  stripeCustomerId String?
-  stripeSubscriptionId String?
+  payfastPaymentId String?
   status          String   // "active", "canceled", etc
   plan            String   @default("free")
   

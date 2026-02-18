@@ -1,8 +1,34 @@
 import { google } from "googleapis";
-import { oauth2Client } from "../google";
+import { createOAuthClient } from "../google";
 import { prisma } from "../prisma";
+import { refreshYouTubeToken } from "../token-refresh";
 import { Readable } from "stream";
-import type { PlatformPublisher, PlatformStatsProvider, VideoStats } from "./types";
+import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider, PlatformComment, VideoStats } from "./types";
+
+function createAuthedClient(account: { accessToken: string; refreshToken: string | null; expiresAt: number | null }) {
+    const client = createOAuthClient();
+    client.setCredentials({
+        access_token: account.accessToken,
+        refresh_token: account.refreshToken,
+        expiry_date: account.expiresAt ? account.expiresAt * 1000 : undefined,
+    });
+
+    client.on("tokens", async (tokens) => {
+        const updateData: Record<string, unknown> = {};
+        if (tokens.access_token) updateData.accessToken = tokens.access_token;
+        if (tokens.refresh_token) updateData.refreshToken = tokens.refresh_token;
+        if (tokens.expiry_date) updateData.expiresAt = Math.floor(tokens.expiry_date / 1000);
+
+        if (Object.keys(updateData).length > 0) {
+            await prisma.socialAccount.updateMany({
+                where: { accessToken: account.accessToken, provider: "youtube" },
+                data: updateData,
+            });
+        }
+    });
+
+    return client;
+}
 
 export const youtubePublisher: PlatformPublisher = {
     platform: "youtube",
@@ -26,13 +52,9 @@ export const youtubePublisher: PlatformPublisher = {
             throw new Error("No YouTube account connected");
         }
 
-        oauth2Client.setCredentials({
-            access_token: socialAccount.accessToken,
-            refresh_token: socialAccount.refreshToken,
-            expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
-        });
-
-        const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+        const refreshed = await refreshYouTubeToken(socialAccount);
+        const client = createAuthedClient(refreshed);
+        const youtube = google.youtube({ version: "v3", auth: client });
 
         const response = await fetch(content.mediaUrl);
         if (!response.body) {
@@ -77,13 +99,9 @@ export const youtubeStatsProvider: PlatformStatsProvider = {
             return {};
         }
 
-        oauth2Client.setCredentials({
-            access_token: socialAccount.accessToken,
-            refresh_token: socialAccount.refreshToken,
-            expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
-        });
-
-        const youtube = google.youtube({ version: "v3", auth: oauth2Client });
+        const refreshed = await refreshYouTubeToken(socialAccount);
+        const client = createAuthedClient(refreshed);
+        const youtube = google.youtube({ version: "v3", auth: client });
 
         const postIds = posts.map((p) => p.postId);
         const res = await youtube.videos.list({
@@ -104,5 +122,52 @@ export const youtubeStatsProvider: PlatformStatsProvider = {
         }
 
         return statsMap;
+    },
+};
+
+export const youtubeCommentsProvider: PlatformCommentsProvider = {
+    platform: "youtube",
+
+    async getComments(userId, postId) {
+        const socialAccount = await prisma.socialAccount.findFirst({
+            where: { userId, provider: "youtube" },
+        });
+
+        if (!socialAccount) return [];
+
+        const refreshed = await refreshYouTubeToken(socialAccount);
+        const client = createAuthedClient(refreshed);
+        const youtube = google.youtube({ version: "v3", auth: client });
+
+        try {
+            const res = await youtube.commentThreads.list({
+                part: ["snippet", "replies"],
+                videoId: postId,
+                maxResults: 50,
+                order: "relevance",
+            });
+
+            return (res.data.items || []).map((thread): PlatformComment => {
+                const top = thread.snippet!.topLevelComment!.snippet!;
+                return {
+                    id: thread.id!,
+                    authorName: top.authorDisplayName || "Unknown",
+                    authorAvatar: top.authorProfileImageUrl || undefined,
+                    text: top.textDisplay || "",
+                    timestamp: top.publishedAt || new Date().toISOString(),
+                    likeCount: top.likeCount || 0,
+                    replies: thread.replies?.comments?.map((r): PlatformComment => ({
+                        id: r.id!,
+                        authorName: r.snippet!.authorDisplayName || "Unknown",
+                        authorAvatar: r.snippet!.authorProfileImageUrl || undefined,
+                        text: r.snippet!.textDisplay || "",
+                        timestamp: r.snippet!.publishedAt || new Date().toISOString(),
+                        likeCount: r.snippet!.likeCount || 0,
+                    })),
+                };
+            });
+        } catch {
+            return [];
+        }
     },
 };

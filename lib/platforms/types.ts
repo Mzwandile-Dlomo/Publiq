@@ -34,3 +34,22 @@ export interface PlatformStatsProvider {
         posts: { postId: string; socialAccountId?: string | null }[]
     ): Promise<Record<string, VideoStats>>;
 }
+
+export interface PlatformComment {
+    id: string;
+    authorName: string;
+    authorAvatar?: string;
+    text: string;
+    timestamp: string;
+    likeCount: number;
+    replies?: PlatformComment[];
+}
+
+export interface PlatformCommentsProvider {
+    platform: Platform;
+    getComments(
+        userId: string,
+        postId: string,
+        socialAccountId?: string | null
+    ): Promise<PlatformComment[]>;
+}

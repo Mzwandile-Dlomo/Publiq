@@ -1,6 +1,7 @@
 import { uploadToTikTok } from "@/lib/tiktok";
 import { prisma } from "@/lib/prisma";
-import type { PlatformPublisher, PlatformStatsProvider } from "./types";
+import { refreshTikTokToken } from "@/lib/token-refresh";
+import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider } from "./types";
 
 export const tiktokPublisher: PlatformPublisher = {
     platform: "tiktok",
@@ -16,8 +17,10 @@ export const tiktokPublisher: PlatformPublisher = {
 
         if (!account) throw new Error("No TikTok account connected");
 
+        const refreshed = await refreshTikTokToken(account);
+
         const result = await uploadToTikTok(
-            account.accessToken,
+            refreshed.accessToken,
             content.mediaUrl,
             content.description || content.title
         );
@@ -35,5 +38,14 @@ export const tiktokStatsProvider: PlatformStatsProvider = {
     async getStats() {
         // TODO: Implement TikTok Video Insights API
         return {};
+    },
+};
+
+export const tiktokCommentsProvider: PlatformCommentsProvider = {
+    platform: "tiktok",
+
+    async getComments() {
+        // TODO: Implement TikTok Comments API
+        return [];
     },
 };

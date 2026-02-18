@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockVideosInsert, mockVideosList, mockSetCredentials } = vi.hoisted(() => ({
+const { mockVideosInsert, mockVideosList, mockSetCredentials, mockOn } = vi.hoisted(() => ({
     mockVideosInsert: vi.fn(),
     mockVideosList: vi.fn(),
     mockSetCredentials: vi.fn(),
+    mockOn: vi.fn(),
 }));
 
 vi.mock("googleapis", () => ({
@@ -11,6 +12,7 @@ vi.mock("googleapis", () => ({
         auth: {
             OAuth2: class MockOAuth2 {
                 setCredentials = mockSetCredentials;
+                on = mockOn;
             },
         },
         youtube: vi.fn().mockReturnValue({

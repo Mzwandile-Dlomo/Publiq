@@ -23,7 +23,7 @@ export default async function AnalyticsPage() {
                     </p>
                     <div className="mt-6">
                         <Link href="/upload">
-                            <Button className="rounded-full">Upload new content</Button>
+                            <Button className="rounded-full">Upload content</Button>
                         </Link>
                     </div>
                 </div>
