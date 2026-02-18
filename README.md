@@ -51,3 +51,7 @@ Publiq uses a cron endpoint (`/api/cron/publish`) to automatically publish sched
    - **Method**: GET
    - **Schedule**: Every 5 minutes (or more frequent if needed)
 3. The endpoint processes all users' scheduled content in a single run — no per-user configuration is needed.
+
+## Documentation
+
+For detailed implementation phases and technical plans, see [docs/implementation_plan.md](docs/implementation_plan.md).
