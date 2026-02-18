@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getGoogleUser, oauth2Client } from "@/lib/google";
 import { verifySession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma"; // Use the singleton instance
+import { revalidateUser } from "@/lib/auth-user";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -59,6 +60,7 @@ export async function GET(req: Request) {
             },
         });
 
+        revalidateUser(session.userId as string);
         return NextResponse.redirect(new URL("/dashboard?success=youtube_connected", req.url));
     } catch (error) {
         console.error("Google Auth Error:", error);
