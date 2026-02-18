@@ -81,26 +81,28 @@ export async function GET() {
         const syncPromises = Array.from(postIdsByPlatform.entries()).map(
             async ([platform, entries]) => {
                 try {
-                    const provider = getStatsProvider(platform);
+                    const provider = await getStatsProvider(platform);
                     const statsMap = await provider.getStats(
                         userId,
                         entries.map((e) => ({ postId: e.postId, socialAccountId: e.socialAccountId }))
                     );
 
-                    // Update publications with fresh stats
-                    for (const entry of entries) {
-                        const s = statsMap[entry.postId];
-                        if (s) {
-                            await prisma.publication.update({
-                                where: { id: entry.pubId },
-                                data: {
-                                    views: s.views,
-                                    likes: s.likes,
-                                    comments: s.comments,
-                                },
-                            });
-                        }
-                    }
+                    // Batch update publications with fresh stats
+                    await prisma.$transaction(
+                        entries
+                            .filter((entry) => statsMap[entry.postId])
+                            .map((entry) => {
+                                const s = statsMap[entry.postId];
+                                return prisma.publication.update({
+                                    where: { id: entry.pubId },
+                                    data: {
+                                        views: s.views,
+                                        likes: s.likes,
+                                        comments: s.comments,
+                                    },
+                                });
+                            })
+                    );
                 } catch (syncError) {
                     console.error(`${platform} stats sync failed:`, syncError);
                 }
@@ -156,7 +158,11 @@ export async function GET() {
         }));
 
         const response: AnalyticsResponse = { totals, platforms, topContent };
-        return NextResponse.json(response);
+        return NextResponse.json(response, {
+            headers: {
+                "Cache-Control": "private, s-maxage=60, stale-while-revalidate=120",
+            },
+        });
     } catch (error) {
         console.error("Analytics Error:", error);
         return NextResponse.json(

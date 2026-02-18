@@ -59,12 +59,12 @@ export function SignupForm() {
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
-                        <Input id="name" placeholder="John Doe" {...register("name")} />
+                        <Input id="name" placeholder="Sipho Ngcobo" {...register("name")} />
                         {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" placeholder="m@example.com" {...register("email")} />
+                        <Input id="email" type="email" placeholder="siphongcobo@gmail.com" {...register("email")} />
                         {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
                     </div>
                     <div className="space-y-2">

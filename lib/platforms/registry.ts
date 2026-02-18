@@ -1,49 +1,40 @@
 import type { Platform } from "./index";
 import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider } from "./types";
-import { youtubePublisher, youtubeStatsProvider, youtubeCommentsProvider } from "./youtube";
-import { tiktokPublisher, tiktokStatsProvider, tiktokCommentsProvider } from "./tiktok";
-import { instagramPublisher, instagramStatsProvider, instagramCommentsProvider } from "./instagram";
-import { facebookPublisher, facebookStatsProvider, facebookCommentsProvider } from "./facebook";
 
-const publishers: Record<Platform, PlatformPublisher> = {
-    youtube: youtubePublisher,
-    tiktok: tiktokPublisher,
-    instagram: instagramPublisher,
-    facebook: facebookPublisher,
-};
+async function loadPlatformModule(platform: Platform) {
+    switch (platform) {
+        case "youtube":
+            return import("./youtube");
+        case "tiktok":
+            return import("./tiktok");
+        case "instagram":
+            return import("./instagram");
+        case "facebook":
+            return import("./facebook");
+    }
+}
 
-const statsProviders: Record<Platform, PlatformStatsProvider> = {
-    youtube: youtubeStatsProvider,
-    tiktok: tiktokStatsProvider,
-    instagram: instagramStatsProvider,
-    facebook: facebookStatsProvider,
-};
-
-const commentsProviders: Record<Platform, PlatformCommentsProvider> = {
-    youtube: youtubeCommentsProvider,
-    tiktok: tiktokCommentsProvider,
-    instagram: instagramCommentsProvider,
-    facebook: facebookCommentsProvider,
-};
-
-export function getPublisher(platform: Platform): PlatformPublisher {
-    const publisher = publishers[platform];
+export async function getPublisher(platform: Platform): Promise<PlatformPublisher> {
+    const mod = await loadPlatformModule(platform);
+    const publisher = mod[`${platform}Publisher` as keyof typeof mod] as PlatformPublisher | undefined;
     if (!publisher) {
         throw new Error(`No publisher registered for platform: ${platform}`);
     }
     return publisher;
 }
 
-export function getStatsProvider(platform: Platform): PlatformStatsProvider {
-    const provider = statsProviders[platform];
+export async function getStatsProvider(platform: Platform): Promise<PlatformStatsProvider> {
+    const mod = await loadPlatformModule(platform);
+    const provider = mod[`${platform}StatsProvider` as keyof typeof mod] as PlatformStatsProvider | undefined;
     if (!provider) {
         throw new Error(`No stats provider registered for platform: ${platform}`);
     }
     return provider;
 }
 
-export function getCommentsProvider(platform: Platform): PlatformCommentsProvider {
-    const provider = commentsProviders[platform];
+export async function getCommentsProvider(platform: Platform): Promise<PlatformCommentsProvider> {
+    const mod = await loadPlatformModule(platform);
+    const provider = mod[`${platform}CommentsProvider` as keyof typeof mod] as PlatformCommentsProvider | undefined;
     if (!provider) {
         throw new Error(`No comments provider registered for platform: ${platform}`);
     }

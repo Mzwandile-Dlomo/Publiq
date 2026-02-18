@@ -51,7 +51,7 @@ export async function GET(req: Request) {
                 }
 
                 try {
-                    const publisher = getPublisher(platform);
+                    const publisher = await getPublisher(platform);
                     const result = await publisher.publish(content.userId, {
                         id: content.id,
                         mediaUrl: content.mediaUrl,

@@ -27,35 +27,35 @@ vi.mock("@/lib/prisma", () => ({
 import { getPublisher, getStatsProvider } from "@/lib/platforms/registry";
 
 describe("getPublisher", () => {
-    it("returns youtube publisher", () => {
-        const publisher = getPublisher("youtube");
+    it("returns youtube publisher", async () => {
+        const publisher = await getPublisher("youtube");
         expect(publisher.platform).toBe("youtube");
     });
 
-    it("returns facebook publisher", () => {
-        const publisher = getPublisher("facebook");
+    it("returns facebook publisher", async () => {
+        const publisher = await getPublisher("facebook");
         expect(publisher.platform).toBe("facebook");
     });
 
-    it("returns instagram publisher", () => {
-        const publisher = getPublisher("instagram");
+    it("returns instagram publisher", async () => {
+        const publisher = await getPublisher("instagram");
         expect(publisher.platform).toBe("instagram");
     });
 
-    it("returns tiktok publisher", () => {
-        const publisher = getPublisher("tiktok");
+    it("returns tiktok publisher", async () => {
+        const publisher = await getPublisher("tiktok");
         expect(publisher.platform).toBe("tiktok");
     });
 });
 
 describe("getStatsProvider", () => {
-    it("returns youtube stats provider", () => {
-        const provider = getStatsProvider("youtube");
+    it("returns youtube stats provider", async () => {
+        const provider = await getStatsProvider("youtube");
         expect(provider.platform).toBe("youtube");
     });
 
-    it("returns facebook stats provider", () => {
-        const provider = getStatsProvider("facebook");
+    it("returns facebook stats provider", async () => {
+        const provider = await getStatsProvider("facebook");
         expect(provider.platform).toBe("facebook");
     });
 });
