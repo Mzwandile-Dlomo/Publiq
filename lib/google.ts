@@ -7,12 +7,21 @@ export const googleConfig = {
     redirect: process.env.GOOGLE_REDIRECT_URI,
 };
 
+let cachedClient: OAuth2Client | null = null;
+let cachedKey = "";
+
 export function createOAuthClient(): OAuth2Client {
-    return new google.auth.OAuth2(
+    const key = `${googleConfig.clientId}:${googleConfig.clientSecret}:${googleConfig.redirect}`;
+    if (cachedClient && cachedKey === key) {
+        return cachedClient;
+    }
+    cachedClient = new google.auth.OAuth2(
         googleConfig.clientId,
         googleConfig.clientSecret,
         googleConfig.redirect
     );
+    cachedKey = key;
+    return cachedClient;
 }
 
 export const SCOPES = [

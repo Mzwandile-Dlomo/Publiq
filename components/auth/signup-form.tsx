@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -18,6 +19,7 @@ export function SignupForm() {
     const router = useRouter();
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const {
         register,
@@ -59,17 +61,26 @@ export function SignupForm() {
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
-                        <Input id="name" placeholder="John Doe" {...register("name")} />
+                        <Input id="name" placeholder="Sipho Ngcobo" {...register("name")} />
                         {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" placeholder="m@example.com" {...register("email")} />
+                        <Input id="email" type="email" placeholder="siphongcobo@gmail.com" {...register("email")} />
                         {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="password">Password</Label>
-                        <Input id="password" type="password" {...register("password")} />
+                        <div className="relative">
+                            <Input id="password" type={showPassword ? "text" : "password"} {...register("password")} />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground"
+                            >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                        </div>
                         {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
                     </div>
                     {error && <p className="text-sm text-red-500">{error}</p>}

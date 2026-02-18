@@ -34,7 +34,7 @@ export async function GET(
     await Promise.all(
         successfulPubs.map(async (pub) => {
             try {
-                const provider = getCommentsProvider(pub.platform as Platform);
+                const provider = await getCommentsProvider(pub.platform as Platform);
                 const comments = await provider.getComments(
                     session.userId as string,
                     pub.platformPostId!,

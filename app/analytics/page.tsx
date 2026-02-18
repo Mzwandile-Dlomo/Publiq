@@ -1,13 +1,31 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard";
 import { getAuthenticatedUser } from "@/lib/auth-user";
 import { getAnalyticsData } from "@/lib/analytics";
 
-export default async function AnalyticsPage() {
+async function AnalyticsContent() {
     const user = await getAuthenticatedUser();
     const data = await getAnalyticsData(user.id);
+    return <AnalyticsDashboard data={data} />;
+}
 
+function AnalyticsLoadingSkeleton() {
+    return (
+        <div className="space-y-10 animate-pulse">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-28 rounded-2xl bg-muted" />
+                ))}
+            </div>
+            <div className="h-64 rounded-2xl bg-muted" />
+            <div className="h-48 rounded-2xl bg-muted" />
+        </div>
+    );
+}
+
+export default function AnalyticsPage() {
     return (
         <div className="min-h-screen">
             <div className="mx-auto max-w-6xl px-6 py-8">
@@ -29,7 +47,9 @@ export default async function AnalyticsPage() {
                 </div>
 
                 <div className="mt-12">
-                    <AnalyticsDashboard data={data} />
+                    <Suspense fallback={<AnalyticsLoadingSkeleton />}>
+                        <AnalyticsContent />
+                    </Suspense>
                 </div>
             </div>
         </div>

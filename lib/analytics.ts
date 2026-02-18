@@ -63,20 +63,22 @@ async function fetchAnalytics(userId: string): Promise<AnalyticsResponse> {
     const syncPromises = Array.from(postIdsByPlatform.entries()).map(
         async ([platform, entries]) => {
             try {
-                const provider = getStatsProvider(platform);
+                const provider = await getStatsProvider(platform);
                 const statsMap = await provider.getStats(
                     userId,
                     entries.map((e) => ({ postId: e.postId, socialAccountId: e.socialAccountId }))
                 );
-                for (const entry of entries) {
-                    const s = statsMap[entry.postId];
-                    if (s) {
-                        await prisma.publication.update({
-                            where: { id: entry.pubId },
-                            data: { views: s.views, likes: s.likes, comments: s.comments },
-                        });
-                    }
-                }
+                await prisma.$transaction(
+                    entries
+                        .filter((entry) => statsMap[entry.postId])
+                        .map((entry) => {
+                            const s = statsMap[entry.postId];
+                            return prisma.publication.update({
+                                where: { id: entry.pubId },
+                                data: { views: s.views, likes: s.likes, comments: s.comments },
+                            });
+                        })
+                );
             } catch (syncError) {
                 console.error(`${platform} stats sync failed:`, syncError);
             }

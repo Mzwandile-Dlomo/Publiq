@@ -37,8 +37,21 @@ export default async function ContentPage({
 
     const items = await prisma.content.findMany({
         where: { userId: user.id },
-        include: { publications: true },
+        include: {
+            publications: {
+                select: {
+                    id: true,
+                    platform: true,
+                    status: true,
+                    platformPostId: true,
+                    views: true,
+                    likes: true,
+                    comments: true,
+                },
+            },
+        },
         orderBy: { createdAt: "desc" },
+        take: 100,
     });
 
     const serialized = (items as ContentItemRaw[]).map((item: ContentItemRaw) => ({
