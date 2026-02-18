@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import { oauth2Client } from "./google";
 import { prisma } from "./prisma";
+import { refreshYouTubeToken } from "./token-refresh";
 import { Readable } from "stream";
 
 export async function deleteFromYouTube(userId: string, videoId: string) {
@@ -12,10 +13,12 @@ export async function deleteFromYouTube(userId: string, videoId: string) {
         throw new Error("No YouTube account connected");
     }
 
+    const refreshed = await refreshYouTubeToken(socialAccount);
+
     oauth2Client.setCredentials({
-        access_token: socialAccount.accessToken,
-        refresh_token: socialAccount.refreshToken,
-        expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
+        access_token: refreshed.accessToken,
+        refresh_token: refreshed.refreshToken,
+        expiry_date: refreshed.expiresAt ? refreshed.expiresAt * 1000 : undefined,
     });
 
     const youtube = google.youtube({ version: "v3", auth: oauth2Client });
@@ -38,10 +41,12 @@ export async function getYouTubeVideoStats(
         throw new Error("No YouTube account connected");
     }
 
+    const refreshed = await refreshYouTubeToken(socialAccount);
+
     oauth2Client.setCredentials({
-        access_token: socialAccount.accessToken,
-        refresh_token: socialAccount.refreshToken,
-        expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
+        access_token: refreshed.accessToken,
+        refresh_token: refreshed.refreshToken,
+        expiry_date: refreshed.expiresAt ? refreshed.expiresAt * 1000 : undefined,
     });
 
     const youtube = google.youtube({ version: "v3", auth: oauth2Client });
@@ -85,19 +90,14 @@ export async function uploadToYouTube(
         throw new Error("No YouTube account connected");
     }
 
-    // 2. Set Credentials & Refresh if needed
+    // 2. Refresh token if expired, then set credentials
+    const refreshed = await refreshYouTubeToken(socialAccount);
+
     oauth2Client.setCredentials({
-        access_token: socialAccount.accessToken,
-        refresh_token: socialAccount.refreshToken,
-        expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
+        access_token: refreshed.accessToken,
+        refresh_token: refreshed.refreshToken,
+        expiry_date: refreshed.expiresAt ? refreshed.expiresAt * 1000 : undefined,
     });
-
-    // Check if token needs refresh (handled by googleapis mostly, but we should handle the update callback if we want to store new tokens)
-    // Actually, googleapis auto-refreshes if refresh_token is present.
-    // We should listen to 'tokens' event to save new tokens, or just let it handle it in memory for this request.
-    // For robustness, we should manually check or check if googleapis provides a way to get refreshed tokens back.
-
-    // A simple way is to force refresh if expired, but let's try standard usage first.
 
     const youtube = google.youtube({ version: "v3", auth: oauth2Client });
 

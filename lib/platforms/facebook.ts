@@ -1,5 +1,6 @@
 import { publishFacebookVideo, publishFacebookPhoto } from "@/lib/meta";
 import { prisma } from "@/lib/prisma";
+import { refreshMetaToken } from "@/lib/token-refresh";
 import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider, PlatformComment } from "./types";
 
 export const facebookPublisher: PlatformPublisher = {
@@ -18,11 +19,12 @@ export const facebookPublisher: PlatformPublisher = {
 
         if (!account) throw new Error("No Facebook Page connected");
 
+        const refreshed = await refreshMetaToken(account);
         const caption = content.description || content.title;
 
         const result = content.mediaType === "image"
-            ? await publishFacebookPhoto(account.accessToken, account.providerId, content.mediaUrl, caption)
-            : await publishFacebookVideo(account.accessToken, account.providerId, content.mediaUrl, caption);
+            ? await publishFacebookPhoto(refreshed.accessToken, account.providerId, content.mediaUrl, caption)
+            : await publishFacebookVideo(refreshed.accessToken, account.providerId, content.mediaUrl, caption);
 
         return {
             platformPostId: result.id,
@@ -41,6 +43,7 @@ export const facebookStatsProvider: PlatformStatsProvider = {
             id: string;
             providerId: string;
             accessToken: string;
+            expiresAt: number | null;
             isDefault?: boolean | null;
         };
 
@@ -64,6 +67,7 @@ export const facebookStatsProvider: PlatformStatsProvider = {
 
                     if (!account) return;
 
+                    const refreshed = await refreshMetaToken(account);
                     const pageId = account.providerId;
 
                     // Determine the queryable ID — if it's a raw object ID (no underscore),
@@ -75,7 +79,7 @@ export const facebookStatsProvider: PlatformStatsProvider = {
                     // Reactions work with pages_read_engagement (no extra perms needed)
                     let likes = 0;
                     try {
-                        const reactionsUrl = `https://graph.facebook.com/v21.0/${queryId}/reactions?summary=total_count&access_token=${account.accessToken}`;
+                        const reactionsUrl = `https://graph.facebook.com/v21.0/${queryId}/reactions?summary=total_count&access_token=${refreshed.accessToken}`;
                         const reactionsRes = await fetch(reactionsUrl);
                         const reactionsData = await reactionsRes.json();
                         if (!reactionsData.error) {
@@ -88,7 +92,7 @@ export const facebookStatsProvider: PlatformStatsProvider = {
                     // Comments require pages_read_user_content permission
                     let comments = 0;
                     try {
-                        const commentsUrl = `https://graph.facebook.com/v21.0/${queryId}/comments?summary=true&access_token=${account.accessToken}`;
+                        const commentsUrl = `https://graph.facebook.com/v21.0/${queryId}/comments?summary=true&access_token=${refreshed.accessToken}`;
                         const commentsRes = await fetch(commentsUrl);
                         const commentsData = await commentsRes.json();
                         if (!commentsData.error) {
@@ -101,7 +105,7 @@ export const facebookStatsProvider: PlatformStatsProvider = {
                     // Video views (only works for video posts, requires read_insights)
                     let views = 0;
                     try {
-                        const insightsUrl = `https://graph.facebook.com/v21.0/${queryId}/insights?metric=post_impressions&access_token=${account.accessToken}`;
+                        const insightsUrl = `https://graph.facebook.com/v21.0/${queryId}/insights?metric=post_impressions&access_token=${refreshed.accessToken}`;
                         const insightsRes = await fetch(insightsUrl);
                         const insightsData = await insightsRes.json();
                         if (!insightsData.error && insightsData.data?.[0]) {
@@ -136,11 +140,12 @@ export const facebookCommentsProvider: PlatformCommentsProvider = {
             ? accounts.find((a) => a.id === socialAccountId) || accounts.find((a) => a.isDefault) || accounts[0]
             : accounts.find((a) => a.isDefault) || accounts[0];
 
+        const refreshed = await refreshMetaToken(account);
         const pageId = account.providerId;
         const queryId = postId.includes("_") ? postId : `${pageId}_${postId}`;
 
         try {
-            const url = `https://graph.facebook.com/v21.0/${queryId}/comments?fields=id,from,message,created_time,like_count,comments{id,from,message,created_time,like_count}&limit=50&access_token=${account.accessToken}`;
+            const url = `https://graph.facebook.com/v21.0/${queryId}/comments?fields=id,from,message,created_time,like_count,comments{id,from,message,created_time,like_count}&limit=50&access_token=${refreshed.accessToken}`;
             const res = await fetch(url);
             const data = await res.json();
 

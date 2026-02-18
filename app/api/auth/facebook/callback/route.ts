@@ -1,4 +1,5 @@
 import { exchangeMetaCodeForToken, getMetaUserInfo, getFacebookPages } from "@/lib/meta";
+import { exchangeMetaForLongLivedToken } from "@/lib/token-refresh";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { createSession, verifySession } from "@/lib/auth";
@@ -26,14 +27,18 @@ export async function GET(request: Request) {
             instagram_business_account?: { id: string } | null;
         };
 
-        // 1. Exchange code
+        // 1. Exchange code for short-lived token
         const tokenData = await exchangeMetaCodeForToken(code);
-        const accessToken = tokenData.access_token;
 
-        // 2. Get User Info
+        // 2. Exchange short-lived token for long-lived token (~60 days)
+        const longLived = await exchangeMetaForLongLivedToken(tokenData.access_token);
+        const accessToken = longLived.access_token;
+        const tokenExpiresAt = Math.floor(Date.now() / 1000) + longLived.expires_in;
+
+        // 3. Get User Info
         const userInfo = await getMetaUserInfo(accessToken);
 
-        // 3. Get Pages & Instagram Accounts
+        // 4. Get Pages & Instagram Accounts (page tokens from long-lived user token are non-expiring)
         const pages: FacebookPage[] = await getFacebookPages(accessToken);
 
         // Identify current Publiq User
@@ -74,6 +79,7 @@ export async function GET(request: Request) {
                             providerId: page.id,
                             userId: userId,
                             accessToken: page.access_token,
+                            expiresAt: tokenExpiresAt,
                             firstName: page.name,
                             name: page.name,
                             email: userInfo.email,
@@ -96,6 +102,7 @@ export async function GET(request: Request) {
                         },
                         update: {
                             accessToken: p.access_token,
+                            expiresAt: tokenExpiresAt,
                             userId: userId,
                         },
                         create: {
@@ -103,6 +110,7 @@ export async function GET(request: Request) {
                             providerId: p.instagram_business_account.id,
                             userId: userId,
                             accessToken: p.access_token,
+                            expiresAt: tokenExpiresAt,
                             firstName: "Instagram Business",
                             avatarUrl: "",
                         }
@@ -117,6 +125,7 @@ export async function GET(request: Request) {
                     providerId: userInfo.id,
                     userId: userId,
                     accessToken: accessToken,
+                    expiresAt: tokenExpiresAt,
                     firstName: userInfo.name,
                     email: userInfo.email,
                     avatarUrl: userInfo.picture?.data?.url || `https://graph.facebook.com/${userInfo.id}/picture`,

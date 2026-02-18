@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import { oauth2Client } from "../google";
 import { prisma } from "../prisma";
+import { refreshYouTubeToken } from "../token-refresh";
 import { Readable } from "stream";
 import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider, PlatformComment, VideoStats } from "./types";
 
@@ -26,10 +27,12 @@ export const youtubePublisher: PlatformPublisher = {
             throw new Error("No YouTube account connected");
         }
 
+        const refreshed = await refreshYouTubeToken(socialAccount);
+
         oauth2Client.setCredentials({
-            access_token: socialAccount.accessToken,
-            refresh_token: socialAccount.refreshToken,
-            expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
+            access_token: refreshed.accessToken,
+            refresh_token: refreshed.refreshToken,
+            expiry_date: refreshed.expiresAt ? refreshed.expiresAt * 1000 : undefined,
         });
 
         const youtube = google.youtube({ version: "v3", auth: oauth2Client });
@@ -77,10 +80,12 @@ export const youtubeStatsProvider: PlatformStatsProvider = {
             return {};
         }
 
+        const refreshed = await refreshYouTubeToken(socialAccount);
+
         oauth2Client.setCredentials({
-            access_token: socialAccount.accessToken,
-            refresh_token: socialAccount.refreshToken,
-            expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
+            access_token: refreshed.accessToken,
+            refresh_token: refreshed.refreshToken,
+            expiry_date: refreshed.expiresAt ? refreshed.expiresAt * 1000 : undefined,
         });
 
         const youtube = google.youtube({ version: "v3", auth: oauth2Client });
@@ -117,10 +122,12 @@ export const youtubeCommentsProvider: PlatformCommentsProvider = {
 
         if (!socialAccount) return [];
 
+        const refreshed = await refreshYouTubeToken(socialAccount);
+
         oauth2Client.setCredentials({
-            access_token: socialAccount.accessToken,
-            refresh_token: socialAccount.refreshToken,
-            expiry_date: socialAccount.expiresAt ? socialAccount.expiresAt * 1000 : undefined,
+            access_token: refreshed.accessToken,
+            refresh_token: refreshed.refreshToken,
+            expiry_date: refreshed.expiresAt ? refreshed.expiresAt * 1000 : undefined,
         });
 
         const youtube = google.youtube({ version: "v3", auth: oauth2Client });

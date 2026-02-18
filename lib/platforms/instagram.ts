@@ -1,5 +1,6 @@
 import { publishInstagramReel, publishInstagramImage } from "@/lib/meta";
 import { prisma } from "@/lib/prisma";
+import { refreshMetaToken } from "@/lib/token-refresh";
 import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider, PlatformComment } from "./types";
 
 export const instagramPublisher: PlatformPublisher = {
@@ -18,11 +19,12 @@ export const instagramPublisher: PlatformPublisher = {
 
         if (!account) throw new Error("No Instagram Business account connected");
 
+        const refreshed = await refreshMetaToken(account);
         const caption = content.description || content.title;
 
         const result = content.mediaType === "image"
-            ? await publishInstagramImage(account.accessToken, account.providerId, content.mediaUrl, caption)
-            : await publishInstagramReel(account.accessToken, account.providerId, content.mediaUrl, caption);
+            ? await publishInstagramImage(refreshed.accessToken, account.providerId, content.mediaUrl, caption)
+            : await publishInstagramReel(refreshed.accessToken, account.providerId, content.mediaUrl, caption);
 
         return {
             platformPostId: result.id,
@@ -41,12 +43,13 @@ export const instagramStatsProvider: PlatformStatsProvider = {
 
         if (!account || posts.length === 0) return {};
 
+        const refreshed = await refreshMetaToken(account);
         const statsMap: Record<string, import("./types").VideoStats> = {};
 
         await Promise.all(
             posts.map(async ({ postId }) => {
                 try {
-                    const url = `https://graph.facebook.com/v19.0/${postId}?fields=like_count,comments_count&access_token=${account.accessToken}`;
+                    const url = `https://graph.facebook.com/v19.0/${postId}?fields=like_count,comments_count&access_token=${refreshed.accessToken}`;
                     const response = await fetch(url);
                     const data = await response.json();
 
@@ -55,7 +58,7 @@ export const instagramStatsProvider: PlatformStatsProvider = {
                     // Fetch impressions (views) from insights endpoint
                     let views = 0;
                     try {
-                        const insightsUrl = `https://graph.facebook.com/v19.0/${postId}/insights?metric=impressions&access_token=${account.accessToken}`;
+                        const insightsUrl = `https://graph.facebook.com/v19.0/${postId}/insights?metric=impressions&access_token=${refreshed.accessToken}`;
                         const insightsRes = await fetch(insightsUrl);
                         const insightsData = await insightsRes.json();
                         if (!insightsData.error && insightsData.data?.[0]?.values?.[0]?.value) {
@@ -90,8 +93,10 @@ export const instagramCommentsProvider: PlatformCommentsProvider = {
 
         if (!account) return [];
 
+        const refreshed = await refreshMetaToken(account);
+
         try {
-            const url = `https://graph.facebook.com/v19.0/${postId}/comments?fields=id,username,text,timestamp,like_count,replies{id,username,text,timestamp,like_count}&limit=50&access_token=${account.accessToken}`;
+            const url = `https://graph.facebook.com/v19.0/${postId}/comments?fields=id,username,text,timestamp,like_count,replies{id,username,text,timestamp,like_count}&limit=50&access_token=${refreshed.accessToken}`;
             const res = await fetch(url);
             const data = await res.json();
 

@@ -19,7 +19,7 @@ const PLANS: PricingPlan[] = [
     {
         name: "Pro",
         description: "For serious content creators.",
-        price: "$19/month",
+        price: "$9/month",
         plan: "pro",
         features: [
             "Unlimited uploads",

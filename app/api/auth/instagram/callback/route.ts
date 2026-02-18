@@ -1,4 +1,5 @@
 import { exchangeMetaCodeForToken, getMetaUserInfo, getFacebookPages } from "@/lib/meta";
+import { exchangeMetaForLongLivedToken } from "@/lib/token-refresh";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { createSession, verifySession } from "@/lib/auth";
@@ -31,12 +32,16 @@ export async function GET(request: Request) {
 
         // 1. Exchange code using the Instagram-specific redirect URI
         const tokenData = await exchangeMetaCodeForToken(code, INSTAGRAM_REDIRECT_URI);
-        const accessToken = tokenData.access_token;
 
-        // 2. Get User Info
+        // 2. Exchange short-lived token for long-lived token (~60 days)
+        const longLived = await exchangeMetaForLongLivedToken(tokenData.access_token);
+        const accessToken = longLived.access_token;
+        const tokenExpiresAt = Math.floor(Date.now() / 1000) + longLived.expires_in;
+
+        // 3. Get User Info
         const userInfo = await getMetaUserInfo(accessToken);
 
-        // 3. Get Pages & find linked Instagram Business accounts
+        // 4. Get Pages & find linked Instagram Business accounts (page tokens from long-lived user token are non-expiring)
         const pages: FacebookPage[] = await getFacebookPages(accessToken);
         console.log("Instagram OAuth - Pages returned:", JSON.stringify(pages, null, 2));
 
@@ -93,6 +98,7 @@ export async function GET(request: Request) {
                         },
                         update: {
                             accessToken: page.access_token,
+                            expiresAt: tokenExpiresAt,
                             userId: userId,
                             firstName: igName,
                             name: igName,
@@ -103,6 +109,7 @@ export async function GET(request: Request) {
                             providerId: igId,
                             userId: userId,
                             accessToken: page.access_token,
+                            expiresAt: tokenExpiresAt,
                             firstName: igName,
                             name: igName,
                             avatarUrl: igAvatar,

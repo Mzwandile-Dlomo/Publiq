@@ -1,5 +1,6 @@
 import { uploadToTikTok } from "@/lib/tiktok";
 import { prisma } from "@/lib/prisma";
+import { refreshTikTokToken } from "@/lib/token-refresh";
 import type { PlatformPublisher, PlatformStatsProvider, PlatformCommentsProvider } from "./types";
 
 export const tiktokPublisher: PlatformPublisher = {
@@ -16,8 +17,10 @@ export const tiktokPublisher: PlatformPublisher = {
 
         if (!account) throw new Error("No TikTok account connected");
 
+        const refreshed = await refreshTikTokToken(account);
+
         const result = await uploadToTikTok(
-            account.accessToken,
+            refreshed.accessToken,
             content.mediaUrl,
             content.description || content.title
         );
