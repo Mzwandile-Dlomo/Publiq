@@ -33,6 +33,7 @@ model SocialAccount {
   email        String?
   avatarUrl    String?
   isDefault    Boolean  @default(false)
+  tokenStatus  String?  // null = valid, "revoked" = needs reconnect
   createdAt    DateTime @default(now())
   name         String?  // Display name for Pages/Channel
   updatedAt    DateTime @updatedAt

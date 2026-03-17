@@ -18,6 +18,7 @@ interface SocialAccount {
     lastName?: string | null;
     avatarUrl?: string | null;
     isDefault?: boolean | null;
+    tokenStatus?: string | null;
 }
 
 interface PlatformConnectionsProps {

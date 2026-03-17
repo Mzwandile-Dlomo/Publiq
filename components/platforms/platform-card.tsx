@@ -14,7 +14,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { PlatformConfig } from "@/lib/platforms";
-import { Youtube, Music2, Instagram, Facebook, Check, Lock } from "lucide-react";
+import { Youtube, Music2, Instagram, Facebook, Check, Lock, AlertTriangle } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     Youtube,
@@ -30,6 +30,7 @@ interface SocialAccount {
     firstName?: string | null;
     lastName?: string | null;
     avatarUrl?: string | null;
+    tokenStatus?: string | null;
 }
 
 interface PlatformCardProps {
@@ -64,54 +65,70 @@ export function PlatformCard({ platform, account, onDisconnect }: PlatformCardPr
 
     if (isConnected) {
         const accountLabel = account.email || [account.firstName, account.lastName].filter(Boolean).join(" ") || "Connected";
+        const isRevoked = account.tokenStatus === "revoked";
+
         return (
-            <div className={`flex items-center justify-between rounded-2xl border ${platform.borderColor} ${platform.bgColor} px-4 py-4`}>
+            <div className={`flex items-center justify-between rounded-2xl border ${isRevoked ? "border-amber-300 bg-amber-50" : `${platform.borderColor} ${platform.bgColor}`} px-4 py-4`}>
                 <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white`}>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white">
                         <Icon className={`h-5 w-5 ${platform.color}`} />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
                             <span className="font-medium">{platform.name}</span>
-                            <Check className="h-4 w-4 text-green-600" />
+                            {isRevoked
+                                ? <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                : <Check className="h-4 w-4 text-green-600" />
+                            }
                         </div>
-                        <div className="text-xs text-muted-foreground">{accountLabel}</div>
+                        <div className="text-xs text-muted-foreground">
+                            {isRevoked ? "Authorization expired — reconnect to continue" : accountLabel}
+                        </div>
                     </div>
                 </div>
-                {onDisconnect && (
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="rounded-full text-muted-foreground hover:text-destructive"
-                            >
-                                Disconnect
+                <div className="flex items-center gap-2">
+                    {isRevoked && (
+                        <a href={platform.connectUrl}>
+                            <Button size="sm" className="rounded-full">
+                                Reconnect
                             </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Disconnect {platform.name}?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will remove your {platform.name} connection. You won&apos;t be able to publish to this platform until you reconnect.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    variant="destructive"
-                                    className="rounded-full"
-                                    onClick={() => {
-                                        onDisconnect(platform.id);
-                                        toast.success(`${platform.name} disconnected`);
-                                    }}
+                        </a>
+                    )}
+                    {onDisconnect && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="rounded-full text-muted-foreground hover:text-destructive"
                                 >
                                     Disconnect
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Disconnect {platform.name}?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will remove your {platform.name} connection. You won&apos;t be able to publish to this platform until you reconnect.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        variant="destructive"
+                                        className="rounded-full"
+                                        onClick={() => {
+                                            onDisconnect(platform.id);
+                                            toast.success(`${platform.name} disconnected`);
+                                        }}
+                                    >
+                                        Disconnect
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                </div>
             </div>
         );
     }
