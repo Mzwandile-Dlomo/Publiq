@@ -171,12 +171,12 @@ export async function publishInstagramImage(
 }
 
 export async function publishInstagramReel(
-    pageAccessToken: string, // We use Page Token that has permissions for the linked IG account
+    pageAccessToken: string,
     igUserId: string,
     videoUrl: string,
     caption: string
 ) {
-    // 1. Create Media Container
+    // 1. Create Media Container for REELS
     const containerUrl = `https://graph.facebook.com/v19.0/${igUserId}/media?access_token=${pageAccessToken}`;
 
     const containerRes = await fetch(containerUrl, {
@@ -194,25 +194,16 @@ export async function publishInstagramReel(
 
     const containerId = containerData.id;
 
-    // 2. Publish Container
-    // We might need to wait for the container to be ready (status check), but for simple implementation we try publish.
-    // Ideally we should poll status. For MVP let's assume valid URL works somewhat quickly or fails. 
-    // Actually IG requires status check usually. 
+    // 2. Poll until container is FINISHED (or fail)
+    const statusUrl = `https://graph.facebook.com/v19.0/${containerId}?fields=status_code&access_token=${pageAccessToken}`;
+    const statusRes = await fetch(statusUrl);
+    const statusData = await statusRes.json();
 
-    // Simple retry loop for status check
-    let attempts = 0;
-    while (attempts < 5) {
-        const statusUrl = `https://graph.facebook.com/v19.0/${containerId}?fields=status_code&access_token=${pageAccessToken}`;
-        const statusRes = await fetch(statusUrl);
-        const statusData = await statusRes.json();
-
-        if (statusData.status_code === 'FINISHED') break;
-        if (statusData.status_code === 'ERROR') throw new Error("IG Media container failed processing");
-
-        await new Promise(r => setTimeout(r, 2000)); // Wait 2s
-        attempts++;
+    if (statusData.status_code !== "FINISHED") {
+        throw new Error("IG Media container failed processing");
     }
 
+    // 3. Publish Container
     const publishUrl = `https://graph.facebook.com/v19.0/${igUserId}/media_publish?access_token=${pageAccessToken}`;
     const publishRes = await fetch(publishUrl, {
         method: "POST",
@@ -226,4 +217,44 @@ export async function publishInstagramReel(
     if (publishData.error) throw new Error(publishData.error.message);
 
     return { id: publishData.id };
+}
+
+/**
+ * Reply to a comment on a Facebook Page post.
+ * Requires pages_manage_posts + pages_read_user_content permissions.
+ */
+export async function replyToFacebookComment(
+    pageAccessToken: string,
+    commentId: string,
+    message: string
+): Promise<{ id: string }> {
+    const url = `https://graph.facebook.com/v21.0/${commentId}/comments?access_token=${pageAccessToken}`;
+    const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return { id: data.id };
+}
+
+/**
+ * Reply to a comment on an Instagram Business media.
+ * Requires instagram_manage_comments permission.
+ */
+export async function replyToInstagramComment(
+    accessToken: string,
+    commentId: string,
+    message: string
+): Promise<{ id: string }> {
+    const url = `https://graph.facebook.com/v19.0/${commentId}/replies?access_token=${accessToken}`;
+    const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return { id: data.id };
 }

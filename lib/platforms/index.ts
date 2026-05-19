@@ -86,7 +86,7 @@ export function getPlatformPostUrl(platform: Platform, postId: string): string |
         case "youtube":
             return `https://youtube.com/watch?v=${postId}`;
         case "tiktok":
-            return `https://tiktok.com/@user/video/${postId}`;
+            return `https://www.tiktok.com/video/${postId}`;
         case "instagram":
             return `https://instagram.com/reel/${postId}`;
         case "facebook":

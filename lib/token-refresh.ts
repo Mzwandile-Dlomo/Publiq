@@ -56,11 +56,10 @@ export async function refreshYouTubeToken(
             (typeof error === "object" && error !== null && "code" in error && (error as { code: unknown }).code === 400);
 
         if (isInvalidGrant) {
-            await prisma.socialAccount.update({
-                where: { id: account.id },
-                data: { tokenStatus: "revoked" },
+            await prisma.socialAccount.delete({
+                where: { id: account.id }
             });
-            throw new Error("YouTube authorization has been revoked. Please reconnect your account.");
+            throw new Error("YouTube authorization has been revoked. The account has been automatically disconnected.");
         }
         throw error;
     }

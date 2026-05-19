@@ -54,6 +54,27 @@ export async function Navbar() {
                         >
                             Analytics
                         </NavLink>
+                        <NavLink
+                            href="/inbox"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                        >
+                            Inbox
+                        </NavLink>
+                        <NavLink
+                            href="/collaborations"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                        >
+                            Collabs
+                        </NavLink>
+                        <NavLink
+                            href="/ideas"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                        >
+                            Ideas
+                        </NavLink>
                     </>
                 ) : null}
                 {session ? (
@@ -89,6 +110,9 @@ export async function Navbar() {
                     <>
                         <Link href="/pricing">
                             Pricing
+                        </Link>
+                        <Link href="/discover">
+                            Discover
                         </Link>
                         <Link
                             href="/auth/login"
