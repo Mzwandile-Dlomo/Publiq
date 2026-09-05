@@ -6,6 +6,26 @@ datasource db {
   provider  = "postgresql"
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────────────────────────────────────────
+
+enum PublicationLogStatus {
+  pending
+  claimed
+  publishing
+  published
+  failed
+  retry
+}
+
+enum PublishStatus {
+  draft
+  scheduled
+  published
+  failed
+}
+
 model User {
   id             String          @id @default(cuid())
   email          String          @unique
@@ -69,10 +89,13 @@ model Content {
   thumbnailUrl String?
   status      String   @default("draft") // "draft", "scheduled", "published"
   scheduledAt DateTime?
+  publishStatus PublishStatus @default(draft)
+  publishedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  publications Publication[]
+  publications      Publication[]
+  publicationLogs   PublicationLog[]
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   collaborations Collaboration[]
@@ -93,6 +116,28 @@ model Publication {
 
   content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
   socialAccount SocialAccount? @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
+}
+
+model PublicationLog {
+  id              String                 @id @default(cuid())
+  contentId       String
+  platform        String                 // "youtube", "tiktok", "instagram", "facebook"
+  status          PublicationLogStatus   @default(pending)
+  publishedUrl    String?                // URL of published content
+  claimedAt       DateTime?              // When this was claimed for publishing
+  claimedBy       String?                // Job ID or hostname for debugging
+  attemptCount    Int                    @default(0)
+  idempotencyKey  String                 @unique
+  lastError       String?                // Error message from platform
+  nextRetryAt     DateTime?              // When to retry next
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  
+  @@index([status, nextRetryAt])
+  @@index([contentId, platform])
+  @@index([claimedAt])
 }
 
 model Subscription {
