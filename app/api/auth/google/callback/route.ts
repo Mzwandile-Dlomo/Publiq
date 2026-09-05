@@ -5,8 +5,10 @@ import { revalidateUser } from "@/lib/auth-user";
 import { prisma } from "@/lib/prisma";
 import { encryptToken } from "@/lib/token-encryption";
 import { validateOAuthState } from "@/lib/oauth-state";
+import { assertGoogleOAuthConfigValid } from "@/lib/config-validation";
 
 export async function GET(req: Request) {
+    assertGoogleOAuthConfigValid();
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
     const state = searchParams.get("state");

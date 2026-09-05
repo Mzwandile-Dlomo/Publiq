@@ -1,8 +1,10 @@
 /**
  * Startup Configuration Validation
  *
- * Validates all required secrets and configuration are present before the app runs.
- * Fails closed: missing required secrets prevent server startup.
+ * Validates configuration at the boundary where it is needed.
+ *
+ * Core secrets are checked during startup. Optional integrations are checked by
+ * their own API routes so an unused provider cannot prevent the app from building.
  *
  * Exit criteria for Security Foundation:
  * - Required JWT_SECRET is present (no fallback allowed)
@@ -13,23 +15,15 @@
  * - Production requires secure environment settings
  */
 
-const REQUIRED_SECRETS = [
+const REQUIRED_CORE_SECRETS = [
   "JWT_SECRET",
   "DATABASE_URL",
   "CRON_SECRET",
 ];
 
-const REQUIRED_OAUTH = [
-  "GOOGLE_CLIENT_ID",
-  "GOOGLE_CLIENT_SECRET",
-  "GOOGLE_REDIRECT_URI",
-  "META_CLIENT_ID",
-  "META_CLIENT_SECRET",
-  "META_REDIRECT_URI",
-  "TIKTOK_CLIENT_KEY",
-  "TIKTOK_CLIENT_SECRET",
-  "TIKTOK_REDIRECT_URI",
-];
+const REQUIRED_GOOGLE_OAUTH = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REDIRECT_URI"];
+const REQUIRED_META_OAUTH = ["META_CLIENT_ID", "META_CLIENT_SECRET", "META_REDIRECT_URI"];
+const REQUIRED_TIKTOK_OAUTH = ["TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET", "TIKTOK_REDIRECT_URI"];
 
 const REQUIRED_UPLOAD = ["UPLOADTHING_TOKEN"];
 
@@ -46,42 +40,38 @@ interface ValidationResult {
 }
 
 export function validateConfig(): ValidationResult {
+  const core = validateCoreConfig();
+  const google = validateGoogleOAuthConfig();
+  const meta = validateMetaOAuthConfig();
+  const tiktok = validateTikTokOAuthConfig();
+  const warnings = [...core.warnings];
+
+  for (const upload of REQUIRED_UPLOAD) {
+    if (!isConfigured(upload)) warnings.push(`Missing optional upload variable: ${upload}`);
+  }
+
+  for (const payment of REQUIRED_PAYMENT) {
+    if (!isConfigured(payment)) warnings.push(`Missing optional payment variable: ${payment}`);
+  }
+
+  return {
+    valid: core.valid && google.valid && meta.valid && tiktok.valid,
+    errors: [...core.errors, ...google.errors, ...meta.errors, ...tiktok.errors],
+    warnings,
+  };
+}
+
+/** Validate secrets required for the application to start safely. */
+export function validateCoreConfig(): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // Check secrets
-  for (const secret of REQUIRED_SECRETS) {
-    const value = process.env[secret];
-    if (!value || value.trim() === "") {
+  for (const secret of REQUIRED_CORE_SECRETS) {
+    if (!isConfigured(secret)) {
       errors.push(`Missing required environment variable: ${secret}`);
     }
   }
 
-  // Check OAuth
-  for (const oauth of REQUIRED_OAUTH) {
-    const value = process.env[oauth];
-    if (!value || value.trim() === "") {
-      errors.push(`Missing required OAuth variable: ${oauth}`);
-    }
-  }
-
-  // Check upload
-  for (const upload of REQUIRED_UPLOAD) {
-    const value = process.env[upload];
-    if (!value || value.trim() === "") {
-      warnings.push(`Missing optional upload variable: ${upload}`);
-    }
-  }
-
-  // Check payment
-  for (const payment of REQUIRED_PAYMENT) {
-    const value = process.env[payment];
-    if (!value || value.trim() === "") {
-      warnings.push(`Missing optional payment variable: ${payment}`);
-    }
-  }
-
-  // Production-specific checks
   if (process.env.NODE_ENV === "production") {
     const jwtSecret = process.env.JWT_SECRET;
     if (jwtSecret && jwtSecret.length < 32) {
@@ -102,8 +92,53 @@ export function validateConfig(): ValidationResult {
   };
 }
 
+export function validateGoogleOAuthConfig(): ValidationResult {
+  return validateIntegrationConfig(REQUIRED_GOOGLE_OAUTH);
+}
+
+export function validateMetaOAuthConfig(): ValidationResult {
+  return validateIntegrationConfig(REQUIRED_META_OAUTH);
+}
+
+export function validateTikTokOAuthConfig(): ValidationResult {
+  return validateIntegrationConfig(REQUIRED_TIKTOK_OAUTH);
+}
+
+function validateIntegrationConfig(variables: string[]): ValidationResult {
+  const errors = variables
+    .filter((variable) => !isConfigured(variable))
+    .map((variable) => `Missing required OAuth variable: ${variable}`);
+
+  return { valid: errors.length === 0, errors, warnings: [] };
+}
+
+function isConfigured(variable: string): boolean {
+  return Boolean(process.env[variable]?.trim());
+}
+
 export function assertConfigValid(): void {
   const validation = validateConfig();
+  assertValidation(validation);
+}
+
+/** Assert the startup-only configuration without requiring optional providers. */
+export function assertCoreConfigValid(): void {
+  assertValidation(validateCoreConfig());
+}
+
+export function assertGoogleOAuthConfigValid(): void {
+  assertValidation(validateGoogleOAuthConfig());
+}
+
+export function assertMetaOAuthConfigValid(): void {
+  assertValidation(validateMetaOAuthConfig());
+}
+
+export function assertTikTokOAuthConfigValid(): void {
+  assertValidation(validateTikTokOAuthConfig());
+}
+
+function assertValidation(validation: ValidationResult): void {
 
   if (validation.warnings.length > 0) {
     console.warn("⚠️  Configuration warnings:");
@@ -114,10 +149,7 @@ export function assertConfigValid(): void {
     console.error("❌ Configuration validation failed:");
     validation.errors.forEach((e) => console.error(`   - ${e}`));
     throw new Error(
-      "Critical configuration missing. See errors above. " +
-        "Update .env and ensure all required variables are set."
+      "Required configuration missing. See errors above and update the deployment environment."
     );
   }
-
-  console.log("✅ Configuration validation passed");
 }

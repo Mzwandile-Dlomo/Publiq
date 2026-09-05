@@ -5,7 +5,7 @@
  * Called from the root layout to ensure startup checks run before any requests.
  */
 
-import { assertConfigValid } from "./config-validation";
+import { assertCoreConfigValid } from "./config-validation";
 
 /**
  * Validates application configuration on startup.
@@ -16,6 +16,6 @@ import { assertConfigValid } from "./config-validation";
 export function validateAppStartup(): void {
   if (typeof window === "undefined") {
     // Server-side only: validate configuration
-    assertConfigValid();
+    assertCoreConfigValid();
   }
 }

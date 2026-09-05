@@ -5,8 +5,10 @@ import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
 import { encryptToken } from "@/lib/token-encryption";
 import { validateOAuthState } from "@/lib/oauth-state";
+import { assertTikTokOAuthConfigValid } from "@/lib/config-validation";
 
 export async function GET(request: Request) {
+    assertTikTokOAuthConfigValid();
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const state = searchParams.get("state");

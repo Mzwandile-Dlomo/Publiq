@@ -6,11 +6,13 @@ import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
 import { encryptToken } from "@/lib/token-encryption";
 import { validateOAuthState } from "@/lib/oauth-state";
+import { assertMetaOAuthConfigValid } from "@/lib/config-validation";
 
 const INSTAGRAM_REDIRECT_URI =
     process.env.INSTAGRAM_REDIRECT_URI || "http://localhost:3000/api/auth/instagram/callback";
 
 export async function GET(request: Request) {
+    assertMetaOAuthConfigValid();
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const state = searchParams.get("state");

@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { validateConfig } from "@/lib/config-validation";
+import { validateConfig, validateCoreConfig } from "@/lib/config-validation";
 import { encryptToken, decryptToken } from "@/lib/token-encryption";
 
 // Mock next/headers for oauth-state tests
@@ -79,6 +79,35 @@ describe("Security Foundation", () => {
       expect(result.valid || result.warnings.length > 0).toBe(true);
 
       process.env.JWT_SECRET = originalSecret;
+    });
+
+    it("should not require OAuth providers during core startup validation", () => {
+      const oauthVariables = [
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "GOOGLE_REDIRECT_URI",
+        "META_CLIENT_ID",
+        "META_CLIENT_SECRET",
+        "META_REDIRECT_URI",
+        "TIKTOK_CLIENT_KEY",
+        "TIKTOK_CLIENT_SECRET",
+        "TIKTOK_REDIRECT_URI",
+      ] as const;
+      const originalValues = new Map(
+        oauthVariables.map((variable) => [variable, process.env[variable]])
+      );
+
+      process.env.DATABASE_URL = "postgresql://test";
+      process.env.CRON_SECRET = "test-cron-secret";
+      process.env.JWT_SECRET = "test-jwt-secret-32chars-minimum";
+      oauthVariables.forEach((variable) => delete process.env[variable]);
+
+      expect(validateCoreConfig().valid).toBe(true);
+
+      originalValues.forEach((value, variable) => {
+        if (value === undefined) delete process.env[variable];
+        else process.env[variable] = value;
+      });
     });
   });
 
