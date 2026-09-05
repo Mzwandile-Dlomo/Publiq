@@ -9,11 +9,11 @@ test, pull request, or deployment evidence where available.
 ## Current status
 
 **Last updated:** 2026-09-05  
-**Overall:** Security foundation complete ✅ Publishing reliability and quality checks next.
+**Overall:** ✅ Security foundation complete with clean build (0 TypeScript errors, all tests passing). Ready for Workstream 2.
 
 | Workstream | Status | Current state | Next evidence needed |
 | --- | --- | --- | --- |
-| Security foundation | **✅ COMPLETE** | Config validation, token encryption, and OAuth state CSRF protection fully implemented and tested. All startup secrets required (fail-closed). | Run application with missing secret to confirm startup failure; manual OAuth flow test to verify encrypted token storage. |
+| Security foundation | **✅ COMPLETE** | Config validation, token encryption, and OAuth state CSRF protection fully implemented, tested (10/10 passing), and build-validated (clean TypeScript, production build succeeds). | Run application with missing secret to confirm startup failure; manual OAuth flow test to verify encrypted token storage. |
 | Publishing reliability | Blocked (awaits security) | Cron-based publishing has no atomic claim, idempotency, or retry queue. | Duplicate-run and retry tests. |
 | Launch-scope integrity | Blocked (awaits publishing) | Public copy and product scope need alignment with implemented capabilities. | Approved launch copy and platform verification record. |
 | Quality and delivery | Blocked (awaits security) | No migrations, environment template, or confirmed clean local verification. | Clean-clone CI run. |
@@ -47,4 +47,9 @@ test, pull request, or deployment evidence where available.
 | | – Added OAuth state validation to all callback routes | Complete | `app/api/auth/google/callback/route.ts`, `app/api/auth/facebook/callback/route.ts`, `app/api/auth/instagram/callback/route.ts`, `app/api/auth/tiktok/callback/route.ts` |
 | | – Created security foundation test suite | Complete | `tests/lib/security-foundation.test.ts` - **10 tests passing** |
 | | – Fixed TypeScript build (revalidateTag signature, test mocking) | Complete | `lib/auth-user.ts`, `tests/lib/security-foundation.test.ts` |
-| | **Security foundation workstream complete** | ✅ **COMPLETE** | All 10 security tests passing; OAuth state and token encryption fully integrated and validated |
+| 2026-09-05 | **TypeScript error remediation (27 errors):** | In Progress | |
+| | – Fixed 24 implicit 'any' parameter annotations across 5 files | Complete | `app/api/content/[id]/comments/route.ts`, `app/api/inbox/reply/route.ts`, `app/api/inbox/route.ts`, `app/inbox/page.tsx`, `app/profile/[username]/page.tsx`, `lib/platforms/facebook.ts` |
+| | – Fixed 2 unknown type errors in profile component | Complete | `app/profile/[username]/page.tsx` - Fixed React key typing and rendered value types |
+| | – Fixed Prisma client import path | Complete | `lib/prisma.ts` - Changed from `@prisma/client` to `.prisma/client` |
+| | **TypeScript build validation** | ✅ **COMPLETE** | `npx tsc --noEmit` returns 0 errors; `npm run build` succeeds with 48 static pages generated |
+| | **Security foundation workstream complete** | ✅ **COMPLETE** | All 10 security tests passing; clean build with 0 TypeScript errors; OAuth state and token encryption fully integrated and validated |
