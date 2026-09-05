@@ -9,29 +9,35 @@
 
 ## 🛠 Tech Stack
 
-- **Framework**: Next.js 14+ (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Database**: PostgreSQL + Prisma
-- **Auth**: Clerk / NextAuth (Auth.js)
-- **Storage**: UploadThing / AWS S3
-- **Queue/Jobs**: BullMQ / Inngest
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **Database**: PostgreSQL (Supabase) + Prisma ORM v7.10
+- **Auth**: Custom JWT with httpOnly cookies (secure state-bound OAuth)
+- **Storage**: UploadThing
+- **Payments**: PayFast (South Africa)
+- **OAuth Providers**: Google (YouTube), Meta (Facebook/Instagram), TikTok
+- **Testing**: Vitest + shadcn/ui mock setup
 
 ## 📅 Roadmap Layers
 
-### Phase 1: Foundation & YouTube Publishing (Current Focus)
-- [ ] Authentication (Secure Login/Signup)
-- [ ] Connect Social Accounts (OAuth)
-- [ ] Video Upload & Storage
-- [ ] Publish to YouTube (Data API v3)
-- [ ] Post Scheduling
-- [ ] PayFast Subscription Integration
-- [ ] Basic Analytics
+### Phase 1: Security & Reliable Publishing (Current)
+- [x] Custom JWT Authentication with state-bound OAuth
+- [x] Secure Social Account Connection (Google, Meta, TikTok)
+- [x] OAuth Token Encryption at Rest (AES-256-GCM)
+- [x] Config Validation (fail-closed on missing secrets)
+- [ ] Atomic Publication Claiming & Idempotency
+- [ ] Bounded Retries with Exponential Backoff
+- [ ] Failed-Publication Visibility & Alerts
 
-### Phase 2: Platform Expansion
-- [ ] TikTok Integration
-- [ ] Instagram/Facebook Reels Integration
-- [ ] Unified Dashboard & Inbox
+### Phase 2: Complete Publishing Workflow
+- [x] Video Upload & Storage (UploadThing)
+- [x] Publish to YouTube (Data API v3)
+- [x] Post Scheduling
+- [x] Basic Analytics
+- [ ] TikTok Publishing (Beta)
+- [ ] Instagram/Facebook Reels Publishing (Beta)
+- [ ] Unified Dashboard & Performance Inbox
 
 ### Phase 3: Creator Marketplace & AI
 - [ ] Public Creator Profiles
@@ -39,18 +45,24 @@
 - [ ] Campaign Management
 - [ ] AI-driven Analytics & Content Optimization
 
+### Phase 4: Platform Expansion
+- [ ] TikTok Complete Flow (Comments, Retries)
+- [ ] Instagram/Facebook Reliability & Full Features
+- [ ] Monetization & PayFast Dashboard
+
 ## Scheduled Publishing (Cron)
 
-Publiq uses a cron endpoint (`/api/cron/publish`) to automatically publish scheduled content. The endpoint checks for any content with a `scheduled` status whose `scheduledAt` time has passed, and publishes it to the configured platforms.
+Publiq uses an authenticated cron endpoint to automatically publish scheduled content. The endpoint claims publications atomically, publishes to configured platforms, and implements bounded retries with exponential backoff for transient failures.
 
 ### Setup
 
-1. Add a `CRON_SECRET` environment variable to your Netlify site (use a URL-safe value, e.g. `openssl rand -hex 32`).
-2. Create a free cron job at [cron-job.org](https://cron-job.org) (or any external cron service) with:
-   - **URL**: `https://<your-site>.netlify.app/api/cron/publish?key=<CRON_SECRET>`
-   - **Method**: GET
-   - **Schedule**: Every 5 minutes (or more frequent if needed)
-3. The endpoint processes all users' scheduled content in a single run — no per-user configuration is needed.
+1. Add a `CRON_SECRET` environment variable to your environment (use a URL-safe value, e.g. `openssl rand -hex 32`).
+2. Configure your external cron service (cron-job.org, GitHub Actions, or similar) to POST to:
+   - **URL**: `https://<your-site>.com/api/cron/publish`
+   - **Method**: POST
+   - **Header**: `Authorization: Bearer <CRON_SECRET>`
+   - **Schedule**: Every 5 minutes (or more frequent for lower-latency publishing)
+3. The endpoint processes all users' scheduled content atomically, preventing duplicate publishing and ensuring safe retries of transient failures.
 
 ## Documentation
 

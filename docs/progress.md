@@ -9,7 +9,7 @@ test, pull request, or deployment evidence where available.
 ## Current status
 
 **Last updated:** 2026-09-05  
-**Overall:** ✅ **Security foundation COMPLETE & VALIDATED** - Config validation, token encryption, OAuth state CSRF protection fully implemented, tested (123/123 tests passing), TypeScript-clean (0 errors), ESLint-clean (0 issues), production build succeeds. Ready for Workstream 2 (Publishing Reliability).
+**Overall:** ✅ **Workstream 1 COMPLETE & VALIDATED** — Security foundation fully implemented, tested (123/123 tests passing), TypeScript-clean (0 errors), ESLint-clean (0 issues), production build succeeds. **Workstream 2 PLAN COMPLETE** — Publishing Reliability implementation plan created with 8 tasks (atomic claiming, idempotency, exponential backoff, operator dashboard). README updated to reflect actual stack (Next.js 16, Prisma, UploadThing, PayFast, custom JWT auth).
 
 | Workstream | Status | Current state | Next evidence needed |
 | --- | --- | --- | --- |
@@ -65,3 +65,17 @@ test, pull request, or deployment evidence where available.
 | | – Removed unused `platform` parameter from getRuleBasedIdeas function | Complete | `app/api/ai/ideas/route.ts` - Updated 2 call sites to match simplified signature |
 | | **ESLint clean** | ✅ **COMPLETE** | `npx eslint .` returns exit code 0 with 0 errors/warnings |
 | | **Final verification suite** | ✅ **COMPLETE** | ESLint: 0 issues ✅; Tests: 123/123 passing ✅; TypeScript: 0 errors ✅; Build: Success ✅ |
+| 2026-09-05 | **README alignment and Workstream 2 planning:** | Complete | |
+| | – Updated README stack details (Next.js 16, Prisma 7.10, custom JWT, UploadThing, PayFast) | Complete | `README.md` - accurate tech stack documented |
+| | – Updated cron endpoint documentation (POST with Bearer auth instead of GET) | Complete | `README.md` - reflects security-first approach |
+| | – Updated roadmap to show Workstream 1 complete, Workstream 2 phases current | Complete | `README.md` - phases reordered and checked |
+| | – **Created Workstream 2 implementation plan (Publishing Reliability):** | Complete | `docs/workstream-2-publishing-reliability.md` |
+| | &nbsp;&nbsp;&nbsp;&nbsp;• Task 2.1: Schema updates (PublicationLog model, atomic claiming) | Designed | 8 detailed tasks with dependencies and success criteria |
+| | &nbsp;&nbsp;&nbsp;&nbsp;• Task 2.2: Cron endpoint auth upgrade (Bearer token, POST) | Designed | Authenticated endpoint specification |
+| | &nbsp;&nbsp;&nbsp;&nbsp;• Task 2.3: Atomic claiming with optimistic locking | Designed | Database-level race condition prevention |
+| | &nbsp;&nbsp;&nbsp;&nbsp;• Task 2.4: Idempotency keys for safe retries | Designed | Attempt-based key generation |
+| | &nbsp;&nbsp;&nbsp;&nbsp;• Task 2.5: Exponential backoff (1s→16s, max 5 attempts) | Designed | Transient vs. permanent error classification |
+| | &nbsp;&nbsp;&nbsp;&nbsp;• Task 2.6: Publication handler refactor | Designed | Orchestrate claim + publish + retry logic |
+| | &nbsp;&nbsp;&nbsp;&nbsp;• Task 2.7: Operator dashboard (failed publications view) | Designed | Admin API for visibility + future Slack alerts |
+| | &nbsp;&nbsp;&nbsp;&nbsp;• Task 2.8: Structured logging for debugging | Designed | JSON logs for aggregation |
+| | – Testing strategy defined (unit + integration + E2E) | Complete | Test cases mapped to each task |
