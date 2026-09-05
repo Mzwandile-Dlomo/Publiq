@@ -7,7 +7,7 @@ import { ZodError } from "zod";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { email, password, name } = signupSchema.parse(body);
+        const { email, password, name, role } = signupSchema.parse(body);
 
         const existingUser = await prisma.user.findUnique({
             where: { email },
@@ -26,6 +26,7 @@ export async function POST(req: Request) {
                 email,
                 password: hashedPassword,
                 name,
+                role,
             },
         });
 

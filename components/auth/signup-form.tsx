@@ -12,11 +12,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
 
 export function SignupForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const role = searchParams.get("role") === "brand" ? "brand" : "creator";
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +30,7 @@ export function SignupForm() {
         formState: { errors },
     } = useForm<SignupFormValues>({
         resolver: zodResolver(signupFormSchema),
+        defaultValues: { role },
     });
 
     async function onSubmit(data: SignupFormValues) {
@@ -36,7 +40,7 @@ export function SignupForm() {
         const res = await fetch("/api/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
+            body: JSON.stringify({ ...data, role }),
         });
 
         if (res.ok) {
@@ -54,7 +58,7 @@ export function SignupForm() {
             <CardHeader>
                 <CardTitle className="text-2xl">Sign Up</CardTitle>
                 <CardDescription>
-                    Create an account to verify connection.
+                    Create your {role === "brand" ? "brand" : "creator"} account to get started.
                 </CardDescription>
             </CardHeader>
             <CardContent>

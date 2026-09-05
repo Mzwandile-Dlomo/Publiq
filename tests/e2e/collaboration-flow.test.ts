@@ -20,6 +20,8 @@ describeDatabaseE2E("brand and creator collaboration flow", () => {
   let appPrisma: InstanceType<PrismaClientConstructor>;
   let brandId: string;
   let creatorId: string;
+  let privateCreatorId: string;
+  let outsiderId: string;
 
   beforeAll(async () => {
     pool = new Pool({ connectionString: databaseUrl });
@@ -44,11 +46,27 @@ describeDatabaseE2E("brand and creator collaboration flow", () => {
 
     brandId = brand.id;
     creatorId = creator.id;
+    const privateCreator = await prisma.user.create({
+      data: {
+        email: `e2e-private-${suffix}@publiq.test`,
+        name: "Private Creator",
+        username: `e2e-private-${suffix}`.slice(0, 30),
+        role: "creator",
+        profilePublic: false,
+      },
+    });
+    const outsider = await prisma.user.create({
+      data: { email: `e2e-outsider-${suffix}@publiq.test`, name: "Outsider", role: "brand" },
+    });
+    privateCreatorId = privateCreator.id;
+    outsiderId = outsider.id;
   });
 
   afterAll(async () => {
     if (!prisma) return;
-    await prisma.user.deleteMany({ where: { id: { in: [brandId, creatorId] } } });
+    await prisma.user.deleteMany({
+      where: { id: { in: [brandId, creatorId, privateCreatorId, outsiderId] } },
+    });
     await appPrisma.$disconnect();
     await prisma.$disconnect();
     await pool.end();
@@ -82,6 +100,18 @@ describeDatabaseE2E("brand and creator collaboration flow", () => {
     expect(campaignResponse.status).toBe(201);
     const { campaign } = await campaignResponse.json();
 
+    auth.verifySession.mockResolvedValue({ userId: outsiderId });
+    const forbiddenInvite = await inviteCreator(
+      new Request(`http://localhost/api/campaigns/${campaign.id}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creatorId, fee: 2500, currency: "ZAR" }),
+      }),
+      { params: Promise.resolve({ id: campaign.id }) }
+    );
+    expect(forbiddenInvite.status).toBe(403);
+
+    auth.verifySession.mockResolvedValue({ userId: brandId });
     const invitationResponse = await inviteCreator(
       new Request(`http://localhost/api/campaigns/${campaign.id}/invite`, {
         method: "POST",
@@ -95,6 +125,16 @@ describeDatabaseE2E("brand and creator collaboration flow", () => {
     expect(invitation.status).toBe("invited");
 
     auth.verifySession.mockResolvedValue({ userId: creatorId });
+    const invalidTransition = await updateCollaboration(
+      new Request(`http://localhost/api/collaborations/${invitation.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "accepted" }),
+      }),
+      { params: Promise.resolve({ id: invitation.id }) }
+    );
+    expect(invalidTransition.status).toBe(409);
+
     const proposal = "I would love to create a coffee morning-routine reel for this launch.";
     const applyResponse = await updateCollaboration(
       new Request(`http://localhost/api/collaborations/${invitation.id}`, {
@@ -136,5 +176,41 @@ describeDatabaseE2E("brand and creator collaboration flow", () => {
         }),
       ])
     );
+  });
+
+  it("only exposes public creators through discovery and public profile endpoints", async () => {
+    const { GET: discover } = await import("@/app/api/discover/route");
+    const { GET: getPublicProfile } = await import("@/app/api/profile/[username]/route");
+
+    const discoverResponse = await discover(new Request("http://localhost/api/discover?q=E2E"));
+    expect(discoverResponse.status).toBe(200);
+    const { creators } = await discoverResponse.json();
+    expect(creators.map((creator: { id: string }) => creator.id)).toContain(creatorId);
+    expect(creators.map((creator: { id: string }) => creator.id)).not.toContain(privateCreatorId);
+
+    const publicProfile = await getPublicProfile(new Request("http://localhost/api/profile/e2e"), {
+      params: Promise.resolve({ username: (await prisma.user.findUniqueOrThrow({ where: { id: creatorId } })).username! }),
+    });
+    expect(publicProfile.status).toBe(200);
+
+    const privateProfile = await getPublicProfile(new Request("http://localhost/api/profile/private"), {
+      params: Promise.resolve({ username: (await prisma.user.findUniqueOrThrow({ where: { id: privateCreatorId } })).username! }),
+    });
+    expect(privateProfile.status).toBe(404);
+  });
+
+  it("rejects unauthenticated and creator-owned campaign creation", async () => {
+    const { POST: createCampaign } = await import("@/app/api/campaigns/route");
+    const request = () => new Request("http://localhost/api/campaigns", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Unauthorized campaign" }),
+    });
+
+    auth.verifySession.mockResolvedValue(null);
+    expect((await createCampaign(request())).status).toBe(401);
+
+    auth.verifySession.mockResolvedValue({ userId: creatorId });
+    expect((await createCampaign(request())).status).toBe(403);
   });
 });
