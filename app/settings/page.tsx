@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { getAuthenticatedUser } from "@/lib/auth-user";
+import { ProfileEditor } from "@/components/profile/profile-editor";
 
 export default async function SettingsPage() {
     const user = await getAuthenticatedUser();
@@ -33,25 +34,20 @@ export default async function SettingsPage() {
                     <div className="flex flex-col rounded-2xl border border-border p-6">
                         <h2 className="text-xl font-semibold">Profile</h2>
                         <p className="mt-1 text-xs text-muted-foreground">
-                            Your display name and login email.
+                            Your display name, public creator profile, and niches.
                         </p>
-                        <div className="mt-6 space-y-4 text-sm">
-                            <div className="flex items-center justify-between rounded-2xl border border-border px-4 py-3">
-                                <span className="text-muted-foreground">Name</span>
-                                <span className="font-medium">{displayName}</span>
-                            </div>
-                            <div className="flex items-center justify-between rounded-2xl border border-border px-4 py-3">
-                                <span className="text-muted-foreground">Email</span>
-                                <span className="font-medium">{user?.email ?? "—"}</span>
-                            </div>
-                            <div className="flex items-center justify-between rounded-2xl border border-border px-4 py-3">
-                                <span className="text-muted-foreground">Member since</span>
-                                <span className="font-medium">{memberSince}</span>
-                            </div>
-                            <div className="flex items-center justify-between rounded-2xl border border-border px-4 py-3">
-                                <span className="text-muted-foreground">Plan</span>
-                                <span className="font-semibold capitalize">{planName}</span>
-                            </div>
+                        <div className="mt-6">
+                            <ProfileEditor
+                                initialData={{
+                                    name: user.name ?? null,
+                                    username: (user as { username?: string | null }).username ?? null,
+                                    bio: (user as { bio?: string | null }).bio ?? null,
+                                    niches: (user as { niches?: string[] }).niches ?? [],
+                                    website: (user as { website?: string | null }).website ?? null,
+                                    profilePublic: (user as { profilePublic?: boolean }).profilePublic ?? false,
+                                    role: (user as { role?: string }).role ?? "creator",
+                                }}
+                            />
                         </div>
 
                         <div className="mt-auto pt-6">

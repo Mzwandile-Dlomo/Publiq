@@ -19,8 +19,18 @@ export interface TopContentItem {
     platformPostId: string | null;
 }
 
+/** A single data point for the trend chart — one entry per day */
+export interface TrendDataPoint {
+    date: string; // ISO date string "YYYY-MM-DD"
+    views: number;
+    likes: number;
+    comments: number;
+}
+
 export interface AnalyticsResponse {
     totals: { views: number; likes: number; comments: number };
     platforms: Partial<Record<Platform, PlatformStats>>;
     topContent: TopContentItem[];
+    /** Daily trend data for the selected range */
+    trend: TrendDataPoint[];
 }

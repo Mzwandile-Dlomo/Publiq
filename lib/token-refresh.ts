@@ -47,7 +47,22 @@ export async function refreshYouTubeToken(
         refresh_token: account.refreshToken,
     });
 
-    const { credentials } = await client.refreshAccessToken();
+    let credentials;
+    try {
+        ({ credentials } = await client.refreshAccessToken());
+    } catch (error: unknown) {
+        const isInvalidGrant =
+            (error instanceof Error && error.message.includes("invalid_grant")) ||
+            (typeof error === "object" && error !== null && "code" in error && (error as { code: unknown }).code === 400);
+
+        if (isInvalidGrant) {
+            await prisma.socialAccount.delete({
+                where: { id: account.id }
+            });
+            throw new Error("YouTube authorization has been revoked. The account has been automatically disconnected.");
+        }
+        throw error;
+    }
 
     const newAccessToken = credentials.access_token!;
     const newExpiresAt = credentials.expiry_date

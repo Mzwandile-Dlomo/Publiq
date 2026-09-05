@@ -61,6 +61,24 @@ export function MobileNav({
                                 Dashboard
                             </NavLink>
                         )}
+                        {session && (
+                            <NavLink href="/inbox" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
+                                Inbox
+                            </NavLink>
+                        )}
+                        {session && (
+                            <NavLink href="/collaborations" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
+                                Collabs
+                            </NavLink>
+                        )}
+                        {session && (
+                            <NavLink href="/ideas" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
+                                Ideas
+                            </NavLink>
+                        )}
+                        <NavLink href="/discover" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
+                            Discover
+                        </NavLink>
                         <NavLink href="/pricing" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
                             Pricing
                         </NavLink>

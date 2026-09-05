@@ -12,12 +12,26 @@ model User {
   name           String?
   image          String?
   password       String?
+  // "creator" (default) or "brand"
+  role           String          @default("creator")
+  // public profile fields
+  username       String?         @unique
+  bio            String?
+  niches         String[]        @default([])
+  // social links shown on public profile
+  website        String?
+  // public profile visibility
+  profilePublic  Boolean         @default(false)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   
   socialAccounts SocialAccount[]
   content        Content[]
   subscription   Subscription?
+  // brand relations
+  campaigns      Campaign[]      @relation("BrandCampaigns")
+  // creator relations
+  collaborations Collaboration[] @relation("CreatorCollaborations")
 }
 
 model SocialAccount {
@@ -33,6 +47,7 @@ model SocialAccount {
   email        String?
   avatarUrl    String?
   isDefault    Boolean  @default(false)
+  tokenStatus  String?  // null = valid, "revoked" = needs reconnect
   createdAt    DateTime @default(now())
   name         String?  // Display name for Pages/Channel
   updatedAt    DateTime @updatedAt
@@ -60,6 +75,7 @@ model Content {
   publications Publication[]
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collaborations Collaboration[]
 }
 
 model Publication {
@@ -87,4 +103,58 @@ model Subscription {
   plan            String   @default("free")
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Phase 3: Brand & Campaign models
+// ──────────────────────────────────────────────────────────────────────────────
+
+model Campaign {
+  id          String   @id @default(cuid())
+  brandId     String
+  title       String
+  description String?
+  brief       String?  // detailed creative brief
+  budget      Float?
+  currency    String   @default("ZAR")
+  // target audience / content requirements
+  niches      String[] @default([])
+  platforms   String[] @default([])
+  // lifecycle: "draft" | "open" | "in_progress" | "completed" | "canceled"
+  status      String   @default("draft")
+  deadline    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  brand          User            @relation("BrandCampaigns", fields: [brandId], references: [id], onDelete: Cascade)
+  collaborations Collaboration[]
+}
+
+model Collaboration {
+  id           String   @id @default(cuid())
+  campaignId   String
+  creatorId    String
+  // lifecycle: "invited" | "applied" | "accepted" | "in_progress" | "submitted" | "approved" | "paid" | "rejected"
+  status       String   @default("invited")
+  // agreed fee for this collaboration
+  fee          Float?
+  currency     String   @default("ZAR")
+  // creator's proposal / pitch
+  proposal     String?
+  // link to delivered content (content record)
+  contentId    String?
+  // feedback from brand
+  feedback     String?
+  // payment reference (e.g. PayFast payment id)
+  paymentRef   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator  User     @relation("CreatorCollaborations", fields: [creatorId], references: [id], onDelete: Cascade)
+  content  Content? @relation(fields: [contentId], references: [id], onDelete: SetNull)
+
+  @@unique([campaignId, creatorId])
+  @@index([creatorId])
+  @@index([campaignId])
 }

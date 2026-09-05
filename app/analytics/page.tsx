@@ -7,7 +7,9 @@ import { getAnalyticsData } from "@/lib/analytics";
 
 async function AnalyticsContent() {
     const user = await getAuthenticatedUser();
-    const data = await getAnalyticsData(user.id);
+    const to = new Date();
+    const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const data = await getAnalyticsData(user.id, { from, to });
     return <AnalyticsDashboard data={data} />;
 }
 

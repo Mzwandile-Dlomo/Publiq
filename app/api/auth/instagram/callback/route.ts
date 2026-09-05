@@ -2,8 +2,10 @@ import { exchangeMetaCodeForToken, getMetaUserInfo, getFacebookPages } from "@/l
 import { exchangeMetaForLongLivedToken } from "@/lib/token-refresh";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { createSession, verifySession } from "@/lib/auth";
+import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
+import { encryptToken } from "@/lib/token-encryption";
+import { validateOAuthState } from "@/lib/oauth-state";
 
 const INSTAGRAM_REDIRECT_URI =
     process.env.INSTAGRAM_REDIRECT_URI || "http://localhost:3000/api/auth/instagram/callback";
@@ -11,15 +13,33 @@ const INSTAGRAM_REDIRECT_URI =
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
+    const state = searchParams.get("state");
     const error = searchParams.get("error");
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (error) {
-        return NextResponse.redirect(new URL("/auth/login?error=instagram_access_denied", baseUrl));
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=instagram_access_denied`);
     }
 
     if (!code) {
-        return NextResponse.redirect(new URL("/auth/login?error=no_code", baseUrl));
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=no_code`);
+    }
+
+    // Identify current Publiq user—must already be authenticated
+    const session = await verifySession();
+    const userId = session?.userId as string | undefined;
+
+    if (!userId) {
+        // SECURITY: Do not create or switch users as a side effect of OAuth callback.
+        // User must be authenticated before initiating the account connection.
+        return NextResponse.redirect(
+            `${baseUrl}/auth/login?error=auth_required_for_connection`
+        );
+    }
+
+    // Validate OAuth state for CSRF protection
+    if (!state || !validateOAuthState(state, "facebook", userId)) {
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=invalid_oauth_state`);
     }
 
     try {
@@ -44,28 +64,6 @@ export async function GET(request: Request) {
         // 4. Get Pages & find linked Instagram Business accounts (page tokens from long-lived user token are non-expiring)
         const pages: FacebookPage[] = await getFacebookPages(accessToken);
         console.log("Instagram OAuth - Pages returned:", JSON.stringify(pages, null, 2));
-
-        // Identify current Publiq user
-        const session = await verifySession();
-        let userId = session?.userId as string | undefined;
-
-        if (!userId) {
-            if (userInfo.email) {
-                const existingUser = await prisma.user.findUnique({ where: { email: userInfo.email } });
-                if (existingUser) userId = existingUser.id;
-            }
-        }
-
-        if (!userId) {
-            const newUser = await prisma.user.create({
-                data: {
-                    email: userInfo.email || `${userInfo.id}@facebook.social`,
-                    name: userInfo.name,
-                    image: userInfo.picture?.data?.url,
-                }
-            });
-            userId = newUser.id;
-        }
 
         // Collect Instagram Business accounts from pages
         let foundInstagram = false;
@@ -97,7 +95,7 @@ export async function GET(request: Request) {
                             }
                         },
                         update: {
-                            accessToken: page.access_token,
+                            accessToken: encryptToken(page.access_token),
                             expiresAt: tokenExpiresAt,
                             userId: userId,
                             firstName: igName,
@@ -108,7 +106,7 @@ export async function GET(request: Request) {
                             provider: "instagram",
                             providerId: igId,
                             userId: userId,
-                            accessToken: page.access_token,
+                            accessToken: encryptToken(page.access_token),
                             expiresAt: tokenExpiresAt,
                             firstName: igName,
                             name: igName,
@@ -123,16 +121,16 @@ export async function GET(request: Request) {
 
         if (!foundInstagram) {
             return NextResponse.redirect(
-                new URL("/dashboard?error=no_instagram_business", baseUrl)
+                `${baseUrl}/dashboard?error=no_instagram_business`
             );
         }
 
-        await createSession(userId);
+        // Revalidate user and redirect to dashboard (session already exists from authentication)
         revalidateUser(userId);
-        return NextResponse.redirect(new URL("/dashboard", baseUrl));
+        return NextResponse.redirect(`${baseUrl}/dashboard?success=instagram_connected`);
 
     } catch (error) {
         console.error("Instagram Callback Error:", error);
-        return NextResponse.redirect(new URL("/auth/login?error=instagram_callback_failed", baseUrl));
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=instagram_callback_failed`);
     }
 }

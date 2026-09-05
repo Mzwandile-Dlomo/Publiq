@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import type { OAuth2Client } from "google-auth-library";
+import { generateOAuthState } from "./oauth-state";
 
 export const googleConfig = {
     clientId: process.env.GOOGLE_CLIENT_ID,
@@ -32,13 +33,16 @@ export const SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
 ];
 
-export function getGoogleAuthUrl() {
+export async function getGoogleAuthUrl(userId?: string) {
     const client = createOAuthClient();
-    return client.generateAuthUrl({
+    const state = await generateOAuthState("google", userId);
+    const url = client.generateAuthUrl({
         access_type: "offline",
         prompt: "consent",
         scope: SCOPES,
+        state,
     });
+    return { url, state };
 }
 
 export async function getGoogleTokens(code: string) {
