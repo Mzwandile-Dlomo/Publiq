@@ -26,13 +26,13 @@ export async function GET(
     }
 
     const successfulPubs = content.publications.filter(
-        (p) => p.status === "success" && p.platformPostId
+        (p: typeof content.publications[number]) => p.status === "success" && p.platformPostId
     );
 
     const results: Record<string, { platform: string; comments: PlatformComment[] }> = {};
 
     await Promise.all(
-        successfulPubs.map(async (pub) => {
+        successfulPubs.map(async (pub: typeof successfulPubs[number]) => {
             try {
                 const provider = await getCommentsProvider(pub.platform as Platform);
                 const comments = await provider.getComments(

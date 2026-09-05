@@ -83,12 +83,12 @@ export default async function CreatorProfilePage({ params }: ProfilePageProps) {
         .slice(0, 2)
         .toUpperCase();
 
-    const totalViews = user.content.reduce((sum, c) =>
-        sum + c.publications.reduce((s, p) => s + p.views, 0), 0);
-    const totalLikes = user.content.reduce((sum, c) =>
-        sum + c.publications.reduce((s, p) => s + p.likes, 0), 0);
+    const totalViews = user.content.reduce((sum: number, c: typeof user.content[number]) =>
+        sum + c.publications.reduce((s: number, p: typeof c.publications[number]) => s + p.views, 0), 0);
+    const totalLikes = user.content.reduce((sum: number, c: typeof user.content[number]) =>
+        sum + c.publications.reduce((s: number, p: typeof c.publications[number]) => s + p.likes, 0), 0);
 
-    const platforms = [...new Set(user.socialAccounts.map((a) => a.provider))];
+    const platforms = [...new Set(user.socialAccounts.map((a: typeof user.socialAccounts[number]) => a.provider))] as const;
 
     return (
         <div className="min-h-screen">

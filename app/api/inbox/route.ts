@@ -44,7 +44,7 @@ export async function GET() {
     const entries: InboxEntry[] = [];
 
     await Promise.all(
-        publications.map(async (pub) => {
+        publications.map(async (pub: typeof publications[number]) => {
             try {
                 const provider = await getCommentsProvider(pub.platform as Platform);
                 const comments = await provider.getComments(
