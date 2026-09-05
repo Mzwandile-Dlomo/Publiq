@@ -4,7 +4,7 @@ import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Youtube, Play, ImageIcon } from "lucide-react";
+import { Globe, Play, ImageIcon } from "lucide-react";
 
 const PLATFORM_ICONS: Record<string, string> = {
     youtube: "YT",

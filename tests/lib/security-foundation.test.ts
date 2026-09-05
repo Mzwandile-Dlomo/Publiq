@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { validateConfig } from "@/lib/config-validation";
-import { encryptToken, decryptToken, validateEncryptionKeySet } from "@/lib/token-encryption";
+import { encryptToken, decryptToken } from "@/lib/token-encryption";
 
 // Mock next/headers for oauth-state tests
 vi.mock("next/headers", () => ({

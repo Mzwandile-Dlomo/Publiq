@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockGenerateAuthUrl, mockGetToken, mockSetCredentials, mockUserinfoGet, mockGenerateOAuthState } = vi.hoisted(() => ({
-    mockGenerateAuthUrl: vi.fn((config) => `https://accounts.google.com/o/oauth2/v2/auth?mock=true&state=${config.state || "no-state"}`),
+const { mockGetToken, mockSetCredentials, mockUserinfoGet, mockGenerateOAuthState } = vi.hoisted(() => ({
     mockGetToken: vi.fn().mockResolvedValue({
         tokens: {
             access_token: "google-access-token",
@@ -20,7 +19,7 @@ vi.mock("googleapis", () => ({
     google: {
         auth: {
             OAuth2: class MockOAuth2 {
-                generateAuthUrl(config: any) {
+                generateAuthUrl(config: Record<string, unknown>) {
                     return `https://accounts.google.com/o/oauth2/v2/auth?mock=true&state=${config.state || "no-state"}`;
                 }
                 getToken = mockGetToken;

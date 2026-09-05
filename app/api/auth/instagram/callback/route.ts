@@ -58,8 +58,8 @@ export async function GET(request: Request) {
         const accessToken = longLived.access_token;
         const tokenExpiresAt = Math.floor(Date.now() / 1000) + longLived.expires_in;
 
-        // 3. Get User Info
-        const userInfo = await getMetaUserInfo(accessToken);
+        // 3. Get User Info (not currently used but retrieved for future extensibility)
+        await getMetaUserInfo(accessToken);
 
         // 4. Get Pages & find linked Instagram Business accounts (page tokens from long-lived user token are non-expiring)
         const pages: FacebookPage[] = await getFacebookPages(accessToken);

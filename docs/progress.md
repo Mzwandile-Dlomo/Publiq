@@ -13,11 +13,11 @@ test, pull request, or deployment evidence where available.
 
 | Workstream | Status | Current state | Next evidence needed |
 | --- | --- | --- | --- |
-| Security foundation | **✅ COMPLETE** | Config validation, token encryption, and OAuth state CSRF protection fully implemented, tested (10/10 passing), and build-validated (clean TypeScript, production build succeeds). | Run application with missing secret to confirm startup failure; manual OAuth flow test to verify encrypted token storage. |
-| Publishing reliability | Blocked (awaits security) | Cron-based publishing has no atomic claim, idempotency, or retry queue. | Duplicate-run and retry tests. |
+| Security foundation | **✅ COMPLETE** | Config validation, token encryption, OAuth state CSRF protection fully implemented, tested (123/123 tests passing including 10 security-specific tests), and build-validated (0 TypeScript errors, production build succeeds). | Run application with missing secret to confirm startup failure; manual OAuth flow test to verify encrypted token storage in DB. |
+| Publishing reliability | Ready | Cron-based publishing has no atomic claim, idempotency, or retry queue. Ready to implement after security foundation. | Duplicate-run and retry tests. |
 | Launch-scope integrity | Blocked (awaits publishing) | Public copy and product scope need alignment with implemented capabilities. | Approved launch copy and platform verification record. |
 | Quality and delivery | Blocked (awaits security) | No migrations, environment template, or confirmed clean local verification. | Clean-clone CI run. |
-| Critical automated coverage | Blocked (awaits security) | Unit tests exist; core route/database flows are not covered. | Passing integration/E2E suite. |
+| Critical automated coverage | Blocked (awaits security) | Unit tests exist (123 total); core route/database flows are not covered. | Passing integration/E2E suite. |
 
 ## Baseline findings
 
