@@ -4,10 +4,12 @@ import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
 import { prisma } from "@/lib/prisma";
 import { encryptToken } from "@/lib/token-encryption";
+import { validateOAuthState } from "@/lib/oauth-state";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
+    const state = searchParams.get("state");
     const error = searchParams.get("error");
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -22,6 +24,11 @@ export async function GET(req: Request) {
     const session = await verifySession();
     if (!session) {
         return NextResponse.redirect(`${baseUrl}/auth/login`);
+    }
+
+    // Validate OAuth state for CSRF protection
+    if (!state || !validateOAuthState(state, "google", session.userId as string)) {
+        return NextResponse.redirect(`${baseUrl}/dashboard?error=invalid_oauth_state`);
     }
 
     try {
