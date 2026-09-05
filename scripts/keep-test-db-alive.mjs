@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Pool } from "pg";
 
 const databaseUrl = process.env.E2E_DATABASE_URL;
