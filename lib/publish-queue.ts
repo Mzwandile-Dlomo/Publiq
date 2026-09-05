@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import type { PublicationLog } from ".prisma/client";
+import type { PublicationLog } from "./publication-log-types";
 
 /**
  * Generate an idempotency key for a publication attempt

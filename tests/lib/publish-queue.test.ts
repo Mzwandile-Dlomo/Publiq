@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { PublicationLog } from "@prisma/client";
+import type { PublicationLog } from "@/lib/publication-log-types";
 import {
   generateIdempotencyKey,
   calculateNextRetry,
