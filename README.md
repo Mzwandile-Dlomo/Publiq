@@ -67,3 +67,23 @@ Publiq uses an authenticated cron endpoint to automatically publish scheduled co
 ## Documentation
 
 For detailed implementation phases and technical plans, see [docs/implementation_plan.md](docs/implementation_plan.md).
+
+## Demo collaboration data
+
+Seed a local or staging database with a public creator, a brand, an open campaign,
+and an invitation for the creator:
+
+```bash
+npm run db:seed
+```
+
+The demo accounts use `DemoPassword123!` and are safe to re-run because the seed
+updates the same records. Do not run this against production.
+
+To validate the brand-to-creator flow against a disposable PostgreSQL database:
+
+```bash
+E2E_DATABASE_URL='postgresql://...' npm run test:e2e
+```
+
+The test creates and removes its own brand, creator, campaign, and collaboration.

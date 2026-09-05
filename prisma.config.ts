@@ -7,6 +7,9 @@ export default defineConfig({
     url: process.env["DATABASE_URL"],
     // directUrl: process.env["DIRECT_URL"],
   },
+  migrations: {
+    seed: "node prisma/seed.mjs",
+  },
 });
 
 
@@ -22,5 +25,4 @@ export default defineConfig({
 //     directUrl: process.env["DIRECT_URL"],
 //   },
 // });
-
 

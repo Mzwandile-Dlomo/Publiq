@@ -9,7 +9,9 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:seed": "prisma db seed",
+    "test:e2e": "RUN_DB_E2E=true vitest run tests/e2e"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
