@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:seed": "prisma db seed",
-    "test:e2e": "RUN_DB_E2E=true vitest run tests/e2e"
+    "test:integration": "RUN_DB_E2E=true vitest run tests/e2e",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -30,7 +30,6 @@ export function SignupForm() {
         formState: { errors },
     } = useForm<SignupFormValues>({
         resolver: zodResolver(signupFormSchema),
-        defaultValues: { role },
     });
 
     async function onSubmit(data: SignupFormValues) {

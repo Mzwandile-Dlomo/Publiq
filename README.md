@@ -80,10 +80,19 @@ npm run db:seed
 The demo accounts use `DemoPassword123!` and are safe to re-run because the seed
 updates the same records. Do not run this against production.
 
-To validate the brand-to-creator flow against a disposable PostgreSQL database:
+To validate the API flow against a disposable PostgreSQL database:
 
 ```bash
+E2E_DATABASE_URL='postgresql://...' npm run test:integration
+```
+
+To run the browser flow (creator publishes profile → brand discovers and invites
+them → creator applies → brand accepts):
+
+```bash
+E2E_DATABASE_URL='postgresql://...' npx prisma db push
 E2E_DATABASE_URL='postgresql://...' npm run test:e2e
 ```
 
-The test creates and removes its own brand, creator, campaign, and collaboration.
+Both tests create and remove their own brand, creator, campaign, and collaboration.
+Set `E2E_DATABASE_URL` to a dedicated test database only.

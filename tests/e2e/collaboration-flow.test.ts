@@ -9,6 +9,10 @@ const { PrismaClient } = (await import("@prisma/client")) as unknown as {
 
 const auth = vi.hoisted(() => ({ verifySession: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ verifySession: auth.verifySession }));
+vi.mock("next/cache", () => ({
+  unstable_cache: (callback: () => unknown) => callback,
+  revalidateTag: vi.fn(),
+}));
 
 const databaseUrl = process.env.E2E_DATABASE_URL ?? process.env.DATABASE_URL;
 const runDatabaseE2E = process.env.RUN_DB_E2E === "true" && Boolean(databaseUrl);
@@ -64,10 +68,13 @@ describeDatabaseE2E("brand and creator collaboration flow", () => {
 
   afterAll(async () => {
     if (!prisma) return;
-    await prisma.user.deleteMany({
-      where: { id: { in: [brandId, creatorId, privateCreatorId, outsiderId] } },
-    });
-    await appPrisma.$disconnect();
+    const userIds = [brandId, creatorId, privateCreatorId, outsiderId].filter(
+      (id): id is string => typeof id === "string"
+    );
+    if (userIds.length > 0) {
+      await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    }
+    if (appPrisma) await appPrisma.$disconnect();
     await prisma.$disconnect();
     await pool.end();
   });
