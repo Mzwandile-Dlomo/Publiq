@@ -47,6 +47,43 @@ export function ProfileEditor({ initialData }: ProfileEditorProps) {
         }));
     }
 
+    async function toggleProfileVisibility() {
+        if (saving) return;
+
+        const profilePublic = !form.profilePublic;
+        setForm((f) => ({ ...f, profilePublic }));
+        setSaving(true);
+        setError(null);
+        setSaved(false);
+
+        try {
+            const res = await fetch("/api/profile", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ profilePublic }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                setForm((f) => ({ ...f, profilePublic: !profilePublic }));
+                const message = Array.isArray(data.error)
+                    ? data.error.map((e: { message: string }) => e.message).join(", ")
+                    : (data.error ?? "Failed to update profile visibility");
+                setError(message);
+                return;
+            }
+
+            setForm((f) => ({ ...f, profilePublic: data.user.profilePublic }));
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2500);
+        } catch {
+            setForm((f) => ({ ...f, profilePublic: !profilePublic }));
+            setError("Network error. Please try again.");
+        } finally {
+            setSaving(false);
+        }
+    }
+
     async function handleSave(e: React.FormEvent) {
         e.preventDefault();
         setSaving(true);
@@ -198,17 +235,23 @@ export function ProfileEditor({ initialData }: ProfileEditorProps) {
                     type="button"
                     role="switch"
                     aria-checked={form.profilePublic}
-                    onClick={() => setForm((f) => ({ ...f, profilePublic: !f.profilePublic }))}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                        form.profilePublic ? "bg-primary" : "bg-input"
-                    }`}
+                    aria-label="Toggle public profile"
+                    disabled={saving}
+                    onClick={toggleProfileVisibility}
+                    data-state={form.profilePublic ? "checked" : "unchecked"}
+                    style={{
+                        backgroundColor: form.profilePublic ? "var(--primary)" : "var(--input)",
+                    }}
+                    className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
                 >
                     <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0 transition-transform ${
-                            form.profilePublic ? "translate-x-5" : "translate-x-0"
-                        }`}
+                        style={{ transform: `translateX(${form.profilePublic ? "20px" : "0"})` }}
+                        className="pointer-events-none inline-block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform"
                     />
                 </button>
+                <span className="w-12 text-right text-xs text-muted-foreground" aria-live="polite">
+                    {form.profilePublic ? "Public" : "Private"}
+                </span>
             </div>
 
             {error && (
