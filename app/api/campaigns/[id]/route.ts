@@ -1,7 +1,23 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { revalidateCollaborations } from "@/lib/collaborations";
 import { z } from "zod";
+
+/**
+ * Campaign details are embedded in every collaborating creator's cached list,
+ * so any change to (or deletion of) a campaign has to bust all of them.
+ */
+async function revalidateCampaignCreators(campaignId: string) {
+    const collabs = await prisma.collaboration.findMany({
+        where: { campaignId },
+        select: { creatorId: true },
+    });
+
+    for (const { creatorId } of collabs) {
+        revalidateCollaborations(creatorId);
+    }
+}
 
 const PLATFORMS = ["youtube", "tiktok", "instagram", "facebook"] as const;
 
@@ -98,6 +114,8 @@ export async function PATCH(req: Request, { params }: Params) {
             },
         });
 
+        await revalidateCampaignCreators(id);
+
         return NextResponse.json({ campaign: updated });
     } catch (error) {
         if (error instanceof z.ZodError) {
@@ -131,6 +149,9 @@ export async function DELETE(_req: Request, { params }: Params) {
     if (campaign.brandId !== (session.userId as string)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    // Collect creators before the cascade removes their collaborations.
+    await revalidateCampaignCreators(id);
 
     await prisma.campaign.delete({ where: { id } });
 

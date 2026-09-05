@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { revalidateCollaborations } from "@/lib/collaborations";
 import { z } from "zod";
 
 const inviteSchema = z.object({
@@ -72,6 +73,8 @@ export async function POST(req: Request, { params }: Params) {
                 currency,
             },
         });
+
+        revalidateCollaborations(creatorId);
 
         return NextResponse.json({ collaboration: collab }, { status: 201 });
     } catch (error) {

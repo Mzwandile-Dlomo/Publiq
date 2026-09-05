@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { revalidateCollaborations } from "@/lib/collaborations";
 import { z } from "zod";
 
 const updateCollabSchema = z.object({
@@ -137,6 +138,8 @@ export async function PATCH(req: Request, { params }: Params) {
             where: { id },
             data,
         });
+
+        revalidateCollaborations(collab.creatorId);
 
         return NextResponse.json({ collaboration: updated });
     } catch (error) {

@@ -1,5 +1,5 @@
 import { getAuthenticatedUser } from "@/lib/auth-user";
-import { prisma } from "@/lib/prisma";
+import { getCreatorCollaborations } from "@/lib/collaborations";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { CollaborationsClient } from "@/components/collaborations/collaborations-client";
 
@@ -10,25 +10,7 @@ export const metadata = {
 export default async function CollaborationsPage() {
     const user = await getAuthenticatedUser();
 
-    const collaborations = await prisma.collaboration.findMany({
-        where: { creatorId: user.id },
-        include: {
-            campaign: {
-                select: {
-                    id: true,
-                    title: true,
-                    description: true,
-                    budget: true,
-                    currency: true,
-                    deadline: true,
-                    status: true,
-                    brand: { select: { id: true, name: true, image: true } },
-                },
-            },
-            content: { select: { id: true, title: true, thumbnailUrl: true } },
-        },
-        orderBy: { updatedAt: "desc" },
-    });
+    const collaborations = await getCreatorCollaborations(user.id);
 
     return (
         <div className="min-h-screen">
