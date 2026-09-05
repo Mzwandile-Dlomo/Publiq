@@ -62,5 +62,5 @@ export const getOptionalUser = cache(async () => {
  * user data, social accounts, or subscriptions.
  */
 export function revalidateUser(userId: string) {
-    revalidateTag(`user-${userId}`);
+    revalidateTag(`user-${userId}`, "max");
 }
