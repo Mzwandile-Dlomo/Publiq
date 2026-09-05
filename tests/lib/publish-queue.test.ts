@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { PublicationLog } from "@prisma/client";
 import {
   generateIdempotencyKey,
   calculateNextRetry,
@@ -137,7 +138,7 @@ describe("publish-queue", () => {
     });
 
     it("marks publication as claimed when found", async () => {
-      const mockLog = {
+      const mockLog: PublicationLog = {
         id: "log-123",
         contentId: "content-123",
         platform: "youtube",
@@ -175,7 +176,7 @@ describe("publish-queue", () => {
     });
 
     it("returns null on race condition (update fails)", async () => {
-      const mockLog = {
+      const mockLog: Partial<PublicationLog> = {
         id: "log-123",
         contentId: "content-123",
         platform: "youtube",
@@ -184,7 +185,7 @@ describe("publish-queue", () => {
       };
 
       vi.mocked(prisma.publicationLog.findFirst).mockResolvedValueOnce(
-        mockLog as any
+        mockLog as PublicationLog
       );
       vi.mocked(prisma.publicationLog.update).mockRejectedValueOnce(
         new Error("Unique constraint failed")
@@ -210,13 +211,13 @@ describe("publish-queue", () => {
     });
 
     it("returns null if publication is pending", async () => {
-      const mockLog = {
+      const mockLog: Partial<PublicationLog> = {
         id: "log-123",
         status: "pending",
       };
 
       vi.mocked(prisma.publicationLog.findUnique).mockResolvedValueOnce(
-        mockLog as any
+        mockLog as PublicationLog
       );
 
       const result = await getPublishedIfIdempotent("key-123");
@@ -225,14 +226,14 @@ describe("publish-queue", () => {
     });
 
     it("returns publication if already published", async () => {
-      const mockLog = {
+      const mockLog: Partial<PublicationLog> = {
         id: "log-123",
         status: "published",
         publishedUrl: "https://youtube.com/watch?v=xyz",
       };
 
       vi.mocked(prisma.publicationLog.findUnique).mockResolvedValueOnce(
-        mockLog as any
+        mockLog as PublicationLog
       );
 
       const result = await getPublishedIfIdempotent("key-123");
@@ -245,14 +246,14 @@ describe("publish-queue", () => {
 
   describe("markPublicationSuccess", () => {
     it("marks publication as published with URL", async () => {
-      const updatedLog = {
+      const updatedLog: Partial<PublicationLog> = {
         id: "log-123",
         status: "published",
         publishedUrl: "https://youtube.com/watch?v=xyz",
       };
 
       vi.mocked(prisma.publicationLog.update).mockResolvedValueOnce(
-        updatedLog as any
+        updatedLog as PublicationLog
       );
 
       const result = await markPublicationSuccess(
@@ -267,17 +268,17 @@ describe("publish-queue", () => {
 
   describe("markPublicationFailure", () => {
     it("marks as failed and gives up on permanent errors", async () => {
-      const mockLog = {
+      const mockLog: Partial<PublicationLog> = {
         id: "log-123",
         attemptCount: 2,
         lastError: null,
       };
 
       vi.mocked(prisma.publicationLog.findUniqueOrThrow).mockResolvedValueOnce(
-        mockLog as any
+        mockLog as PublicationLog
       );
 
-      const updatedLog = {
+      const updatedLog: Partial<PublicationLog> = {
         id: "log-123",
         status: "failed",
         lastError: "authentication_error: invalid token",
@@ -285,7 +286,7 @@ describe("publish-queue", () => {
       };
 
       vi.mocked(prisma.publicationLog.update).mockResolvedValueOnce(
-        updatedLog as any
+        updatedLog as PublicationLog
       );
 
       const result = await markPublicationFailure(
@@ -299,17 +300,17 @@ describe("publish-queue", () => {
     });
 
     it("marks as retry and schedules next retry on transient errors", async () => {
-      const mockLog = {
+      const mockLog: Partial<PublicationLog> = {
         id: "log-123",
         attemptCount: 1,
       };
 
       vi.mocked(prisma.publicationLog.findUniqueOrThrow).mockResolvedValueOnce(
-        mockLog as any
+        mockLog as PublicationLog
       );
 
       const futureDate = new Date(Date.now() + 2000);
-      const updatedLog = {
+      const updatedLog: Partial<PublicationLog> = {
         id: "log-123",
         status: "retry",
         lastError: "timeout",
@@ -317,7 +318,7 @@ describe("publish-queue", () => {
       };
 
       vi.mocked(prisma.publicationLog.update).mockResolvedValueOnce(
-        updatedLog as any
+        updatedLog as PublicationLog
       );
 
       const result = await markPublicationFailure("log-123", "timeout");
@@ -330,7 +331,7 @@ describe("publish-queue", () => {
 
   describe("getFailedPublications", () => {
     it("returns failed publications with content details", async () => {
-      const mockFailed = [
+      const mockFailed: Array<Partial<PublicationLog>> = [
         {
           id: "log-123",
           status: "failed",
@@ -344,7 +345,7 @@ describe("publish-queue", () => {
       ];
 
       vi.mocked(prisma.publicationLog.findMany).mockResolvedValueOnce(
-        mockFailed as any
+        mockFailed as unknown as Array<PublicationLog>
       );
 
       const result = await getFailedPublications();
@@ -363,8 +364,9 @@ describe("publish-queue", () => {
         { status: "retry", _count: 1 },
       ];
 
+      // groupBy returns array with status and _count for each group
       vi.mocked(prisma.publicationLog.groupBy).mockResolvedValueOnce(
-        mockStats as any
+        mockStats as any // eslint-disable-line @typescript-eslint/no-explicit-any
       );
 
       const result = await getPublicationStats();
@@ -379,7 +381,7 @@ describe("publish-queue", () => {
 
   describe("getPendingPublications", () => {
     it("returns only publications ready for next retry", async () => {
-      const mockPending = [
+      const mockPending: Array<Partial<PublicationLog>> = [
         {
           id: "log-123",
           status: "pending",
@@ -388,7 +390,7 @@ describe("publish-queue", () => {
       ];
 
       vi.mocked(prisma.publicationLog.findMany).mockResolvedValueOnce(
-        mockPending as any
+        mockPending as unknown as Array<PublicationLog>
       );
 
       const result = await getPendingPublications();

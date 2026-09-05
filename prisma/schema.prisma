@@ -74,6 +74,7 @@ model SocialAccount {
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   publications Publication[]
+  publicationLogs PublicationLog[]
 
   @@unique([provider, providerId])
   @@index([userId])
@@ -122,6 +123,7 @@ model PublicationLog {
   id              String                 @id @default(cuid())
   contentId       String
   platform        String                 // "youtube", "tiktok", "instagram", "facebook"
+  socialAccountId String?
   status          PublicationLogStatus   @default(pending)
   publishedUrl    String?                // URL of published content
   claimedAt       DateTime?              // When this was claimed for publishing
@@ -134,6 +136,7 @@ model PublicationLog {
   updatedAt       DateTime               @updatedAt
   
   content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount? @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
   
   @@index([status, nextRetryAt])
   @@index([contentId, platform])

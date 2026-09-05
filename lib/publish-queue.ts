@@ -129,7 +129,7 @@ export async function claimPublication(
     });
 
     return updated;
-  } catch (error) {
+  } catch {
     // Race condition: another job claimed first
     // Return null to skip this publication
     return null;
