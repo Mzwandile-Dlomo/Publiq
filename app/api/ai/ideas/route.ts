@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
         if (!apiKey) {
             return NextResponse.json({
-                ideas: getRuleBasedIdeas(niches, platform),
+                ideas: getRuleBasedIdeas(niches),
                 source: "rule-based",
             });
         }
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
             const err = await response.text();
             console.error("OpenAI error:", err);
             return NextResponse.json({
-                ideas: getRuleBasedIdeas(niches, platform),
+                ideas: getRuleBasedIdeas(niches),
                 source: "rule-based",
             });
         }
@@ -130,7 +130,7 @@ const DEFAULT_IDEAS = [
     { title: "What I wish I knew when I started", concept: "Lessons and mistakes from your creator journey", format: "long-form", hook: "I wasted 6 months on this one mistake", trend: "Beginner advice content has evergreen appeal" },
 ];
 
-function getRuleBasedIdeas(niches: string[], platform?: string) {
+function getRuleBasedIdeas(niches: string[]) {
     const ideas = niches.flatMap((n) => NICHE_IDEAS[n] ?? []);
     const combined = ideas.length > 0 ? [...ideas, ...DEFAULT_IDEAS] : DEFAULT_IDEAS;
     return combined.slice(0, 8);

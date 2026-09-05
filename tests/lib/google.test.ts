@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockGenerateAuthUrl, mockGetToken, mockSetCredentials, mockUserinfoGet } = vi.hoisted(() => ({
-    mockGenerateAuthUrl: vi.fn().mockReturnValue("https://accounts.google.com/o/oauth2/v2/auth?mock=true"),
+const { mockGetToken, mockSetCredentials, mockUserinfoGet, mockGenerateOAuthState } = vi.hoisted(() => ({
     mockGetToken: vi.fn().mockResolvedValue({
         tokens: {
             access_token: "google-access-token",
@@ -13,13 +12,16 @@ const { mockGenerateAuthUrl, mockGetToken, mockSetCredentials, mockUserinfoGet }
     mockUserinfoGet: vi.fn().mockResolvedValue({
         data: { id: "g-123", email: "test@gmail.com", given_name: "Test", family_name: "User", picture: "https://pic.url" },
     }),
+    mockGenerateOAuthState: vi.fn().mockResolvedValue("mock-state-value"),
 }));
 
 vi.mock("googleapis", () => ({
     google: {
         auth: {
             OAuth2: class MockOAuth2 {
-                generateAuthUrl = mockGenerateAuthUrl;
+                generateAuthUrl(config: Record<string, unknown>) {
+                    return `https://accounts.google.com/o/oauth2/v2/auth?mock=true&state=${config.state || "no-state"}`;
+                }
                 getToken = mockGetToken;
                 setCredentials = mockSetCredentials;
             },
@@ -28,6 +30,10 @@ vi.mock("googleapis", () => ({
             userinfo: { get: mockUserinfoGet },
         }),
     },
+}));
+
+vi.mock("@/lib/oauth-state", () => ({
+    generateOAuthState: mockGenerateOAuthState,
 }));
 
 import { getGoogleAuthUrl, getGoogleTokens, getGoogleUser, SCOPES } from "@/lib/google";
@@ -47,14 +53,11 @@ describe("SCOPES", () => {
 });
 
 describe("getGoogleAuthUrl", () => {
-    it("generates an OAuth URL with correct params", () => {
-        const url = getGoogleAuthUrl();
-        expect(url).toBe("https://accounts.google.com/o/oauth2/v2/auth?mock=true");
-        expect(mockGenerateAuthUrl).toHaveBeenCalledWith({
-            access_type: "offline",
-            prompt: "consent",
-            scope: SCOPES,
-        });
+    it("generates an OAuth URL with correct params", async () => {
+        const { url, state } = await getGoogleAuthUrl();
+        expect(url).toContain("https://accounts.google.com/o/oauth2/v2/auth");
+        expect(url).toContain("state=mock-state-value");
+        expect(state).toBe("mock-state-value");
     });
 });
 

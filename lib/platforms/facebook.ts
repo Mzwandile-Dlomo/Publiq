@@ -137,8 +137,8 @@ export const facebookCommentsProvider: PlatformCommentsProvider = {
         if (accounts.length === 0) return [];
 
         const account = socialAccountId
-            ? accounts.find((a) => a.id === socialAccountId) || accounts.find((a) => a.isDefault) || accounts[0]
-            : accounts.find((a) => a.isDefault) || accounts[0];
+            ? accounts.find((a: typeof accounts[number]) => a.id === socialAccountId) || accounts.find((a: typeof accounts[number]) => a.isDefault) || accounts[0]
+            : accounts.find((a: typeof accounts[number]) => a.isDefault) || accounts[0];
 
         const refreshed = await refreshMetaToken(account);
         const pageId = account.providerId;

@@ -9,11 +9,7 @@ import { ProfileEditor } from "@/components/profile/profile-editor";
 export default async function SettingsPage() {
     const user = await getAuthenticatedUser();
 
-    const displayName = user?.name || user?.email || "Creator";
     const planName = user?.subscription?.plan ?? "free";
-    const memberSince = user?.createdAt
-        ? new Date(user.createdAt).toLocaleDateString()
-        : "—";
 
     return (
         <div className="min-h-screen">
