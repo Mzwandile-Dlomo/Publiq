@@ -10,15 +10,23 @@ import {
 } from "@/lib/meta";
 
 const mockFetch = vi.fn();
+const { mockGenerateOAuthState } = vi.hoisted(() => ({
+    mockGenerateOAuthState: vi.fn().mockResolvedValue("mock-state-value"),
+}));
+
 vi.stubGlobal("fetch", mockFetch);
+
+vi.mock("@/lib/oauth-state", () => ({
+    generateOAuthState: mockGenerateOAuthState,
+}));
 
 beforeEach(() => {
     vi.clearAllMocks();
 });
 
 describe("getMetaAuthUrl", () => {
-    it("returns a valid Facebook OAuth URL", () => {
-        const url = getMetaAuthUrl();
+    it("returns a valid Facebook OAuth URL", async () => {
+        const { url } = await getMetaAuthUrl();
 
         expect(url).toContain("https://www.facebook.com/v19.0/dialog/oauth");
         expect(url).toContain(`client_id=${process.env.META_CLIENT_ID}`);
@@ -27,8 +35,8 @@ describe("getMetaAuthUrl", () => {
         expect(url).toContain("scope=");
     });
 
-    it("includes all required scopes", () => {
-        const url = getMetaAuthUrl();
+    it("includes all required scopes", async () => {
+        const { url } = await getMetaAuthUrl();
 
         for (const scope of META_SCOPES) {
             expect(url).toContain(scope);
