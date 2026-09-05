@@ -1,3 +1,4 @@
+import { generateOAuthState } from "./oauth-state";
 
 export const TIKTOK_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY!;
 export const TIKTOK_CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET!;
@@ -17,11 +18,9 @@ const SCOPES = [
     "video.publish"
 ];
 
-export function getTikTokAuthUrl() {
-    const csrfState = Math.random().toString(36).substring(7);
+export async function getTikTokAuthUrl() {
+    const csrfState = await generateOAuthState("tiktok");
     const url = `https://www.tiktok.com/v2/auth/authorize/?client_key=${TIKTOK_CLIENT_KEY}&scope=${SCOPES.join(",")}&response_type=code&redirect_uri=${encodeURIComponent(TIKTOK_REDIRECT_URI)}&state=${csrfState}`;
-    // NOTE: State is generated here but should be validated in the callback.
-    // Consider using oauth-state.ts for better CSRF protection that's bound to the initiating user.
     return { url, state: csrfState };
 }
 

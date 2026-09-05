@@ -33,9 +33,9 @@ export const SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
 ];
 
-export function getGoogleAuthUrl(userId?: string) {
+export async function getGoogleAuthUrl(userId?: string) {
     const client = createOAuthClient();
-    const state = generateOAuthState("google", userId);
+    const state = await generateOAuthState("google", userId);
     const url = client.generateAuthUrl({
         access_type: "offline",
         prompt: "consent",

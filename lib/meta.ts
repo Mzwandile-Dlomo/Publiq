@@ -1,4 +1,6 @@
 
+import { generateOAuthState } from "./oauth-state";
+
 export const META_CLIENT_ID = process.env.META_CLIENT_ID!;
 export const META_CLIENT_SECRET = process.env.META_CLIENT_SECRET!;
 export const META_REDIRECT_URI = process.env.META_REDIRECT_URI || "http://localhost:3000/api/auth/facebook/callback";
@@ -21,12 +23,10 @@ export const META_SCOPES = [
     "instagram_content_publish"
 ];
 
-export function getMetaAuthUrl(redirectUri?: string) {
-    const state = Math.random().toString(36).substring(7);
+export async function getMetaAuthUrl(redirectUri?: string) {
+    const state = await generateOAuthState("facebook");
     const uri = redirectUri || META_REDIRECT_URI;
     const url = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_CLIENT_ID}&redirect_uri=${encodeURIComponent(uri)}&state=${state}&scope=${META_SCOPES.join(",")}`;
-    // NOTE: State is generated here but should be validated in the callback.
-    // Consider using oauth-state.ts for better CSRF protection that's bound to the initiating user.
     return { url, state };
 }
 
