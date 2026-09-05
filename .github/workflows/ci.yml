@@ -103,7 +103,6 @@ jobs:
     # Configure E2E_DATABASE_URL as a repository Actions secret to enable this job.
     env:
       E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
-    if: ${{ env.E2E_DATABASE_URL != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -116,16 +115,16 @@ jobs:
         run: npm ci
 
       - name: Prepare the test database
+        if: ${{ env.E2E_DATABASE_URL != '' }}
         env:
-          DATABASE_URL: ${{ env.E2E_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
         run: npx prisma db push
 
       - name: Generate Prisma client
         run: npx prisma generate
 
       - name: Run API integration tests
-        env:
-          E2E_DATABASE_URL: ${{ env.E2E_DATABASE_URL }}
+        if: ${{ env.E2E_DATABASE_URL != '' }}
         run: npm run test:integration
 
   browser-e2e:
@@ -135,7 +134,6 @@ jobs:
     # Configure E2E_DATABASE_URL as a repository Actions secret to enable this job.
     env:
       E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
-    if: ${{ env.E2E_DATABASE_URL != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -148,19 +146,21 @@ jobs:
         run: npm ci
 
       - name: Prepare the test database
+        if: ${{ env.E2E_DATABASE_URL != '' }}
         env:
-          DATABASE_URL: ${{ env.E2E_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
         run: npx prisma db push
 
       - name: Generate Prisma client
         run: npx prisma generate
 
       - name: Install Chromium
+        if: ${{ env.E2E_DATABASE_URL != '' }}
         run: npx playwright install --with-deps chromium
 
       - name: Run browser end-to-end tests
+        if: ${{ env.E2E_DATABASE_URL != '' }}
         env:
-          E2E_DATABASE_URL: ${{ env.E2E_DATABASE_URL }}
           CI: true
         run: npm run test:e2e
 
