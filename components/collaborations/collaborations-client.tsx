@@ -43,6 +43,8 @@ interface Collab {
 
 interface CollaborationsClientProps {
     initialCollabs: Collab[];
+    profilePublic: boolean;
+    username: string | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -62,7 +64,7 @@ const STATUS_ACTIONS: Record<string, { label: string; next: string }[]> = {
     in_progress: [{ label: "Submit Work", next: "submitted" }],
 };
 
-export function CollaborationsClient({ initialCollabs }: CollaborationsClientProps) {
+export function CollaborationsClient({ initialCollabs, profilePublic, username }: CollaborationsClientProps) {
     const [collabs, setCollabs] = useState<Collab[]>(initialCollabs);
     const [proposalTexts, setProposalTexts] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState<Record<string, boolean>>({});
@@ -94,13 +96,20 @@ export function CollaborationsClient({ initialCollabs }: CollaborationsClientPro
         return (
             <div className="py-16 text-center text-muted-foreground">
                 <p className="text-lg">No collaborations yet.</p>
-                <p className="mt-2 text-sm">
-                    Make your profile public on the{" "}
-                    <Link href="/settings" className="underline underline-offset-2">
-                        settings page
-                    </Link>{" "}
-                    so brands can discover you.
-                </p>
+                {profilePublic ? (
+                    <p className="mt-2 text-sm">
+                        Your profile is public{username ? ` at /profile/${username}` : ""}. Brands can now
+                        discover you; collaboration invitations will appear here.
+                    </p>
+                ) : (
+                    <p className="mt-2 text-sm">
+                        Make your profile public on the{" "}
+                        <Link href="/settings" className="underline underline-offset-2">
+                            settings page
+                        </Link>{" "}
+                        so brands can discover you.
+                    </p>
+                )}
             </div>
         );
     }

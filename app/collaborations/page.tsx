@@ -45,7 +45,11 @@ export default async function CollaborationsPage() {
                     </p>
                 </div>
 
-                <CollaborationsClient initialCollabs={collaborations as never} />
+                <CollaborationsClient
+                    initialCollabs={collaborations as never}
+                    profilePublic={user.profilePublic}
+                    username={user.username}
+                />
 
                 <SiteFooter />
             </main>
