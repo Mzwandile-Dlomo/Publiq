@@ -5,10 +5,12 @@ import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
 import { encryptToken } from "@/lib/token-encryption";
+import { validateOAuthState } from "@/lib/oauth-state";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
+    const state = searchParams.get("state");
     const error = searchParams.get("error");
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -18,6 +20,22 @@ export async function GET(request: Request) {
 
     if (!code) {
         return NextResponse.redirect(`${baseUrl}/auth/login?error=no_code`);
+    }
+
+    const session = await verifySession();
+    const userId = session?.userId as string | undefined;
+
+    if (!userId) {
+        // SECURITY: Do not create or switch users as a side effect of OAuth callback.
+        // User must be authenticated before initiating the account connection.
+        return NextResponse.redirect(
+            `${baseUrl}/auth/login?error=auth_required_for_connection`
+        );
+    }
+
+    // Validate OAuth state for CSRF protection
+    if (!state || !validateOAuthState(state, "facebook", userId)) {
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=invalid_oauth_state`);
     }
 
     try {
@@ -41,18 +59,6 @@ export async function GET(request: Request) {
 
         // 4. Get Pages & Instagram Accounts (page tokens from long-lived user token are non-expiring)
         const pages: FacebookPage[] = await getFacebookPages(accessToken);
-
-        // Identify current Publiq User—must already be authenticated
-        const session = await verifySession();
-        const userId = session?.userId as string | undefined;
-
-        if (!userId) {
-            // SECURITY: Do not create or switch users as a side effect of OAuth callback.
-            // User must be authenticated before initiating the account connection.
-            return NextResponse.redirect(
-                `${baseUrl}/auth/login?error=auth_required_for_connection`
-            );
-        }
 
         // Remove any old facebook connection for this user (user-level or previous page)
         await prisma.socialAccount.deleteMany({
