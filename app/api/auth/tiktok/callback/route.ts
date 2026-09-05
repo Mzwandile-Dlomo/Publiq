@@ -9,13 +9,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const error = searchParams.get("error");
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (error) {
-        return NextResponse.redirect(new URL("/auth/login?error=tiktok_access_denied", request.url));
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=tiktok_access_denied`);
     }
 
     if (!code) {
-        return NextResponse.redirect(new URL("/auth/login?error=no_code", request.url));
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=no_code`);
     }
 
     try {
@@ -66,7 +67,7 @@ export async function GET(request: Request) {
         if (!userId) {
             // SECURITY: Do not create or switch users as a side effect of OAuth callback.
             // User must be authenticated before initiating the account connection.
-            return NextResponse.redirect(new URL("/auth/login?error=auth_required_for_connection", request.url));
+            return NextResponse.redirect(`${baseUrl}/auth/login?error=auth_required_for_connection`);
         }
 
         // Check if this TikTok account is already linked to a different Publiq user
@@ -78,7 +79,7 @@ export async function GET(request: Request) {
         if (existingAccount && existingAccount.userId !== userId) {
             // This TikTok account is already linked to a different user.
             // User cannot switch accounts via OAuth callback.
-            return NextResponse.redirect(new URL("/dashboard?error=account_already_linked", request.url));
+            return NextResponse.redirect(`${baseUrl}/dashboard?error=account_already_linked`);
         }
 
         // Link or update TikTok account for the authenticated user
@@ -110,10 +111,10 @@ export async function GET(request: Request) {
 
         // Revalidate user and redirect to dashboard (session already exists from authentication)
         revalidateUser(userId);
-        return NextResponse.redirect(new URL("/dashboard?success=tiktok_connected", request.url));
+        return NextResponse.redirect(`${baseUrl}/dashboard?success=tiktok_connected`);
 
     } catch (error) {
         console.error("TikTok Callback Error:", error);
-        return NextResponse.redirect(new URL("/auth/login?error=tiktok_callback_failed", request.url));
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=tiktok_callback_failed`);
     }
 }

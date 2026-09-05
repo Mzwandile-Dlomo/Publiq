@@ -13,11 +13,11 @@ export async function GET(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (error) {
-        return NextResponse.redirect(new URL("/auth/login?error=meta_access_denied", baseUrl));
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=meta_access_denied`);
     }
 
     if (!code) {
-        return NextResponse.redirect(new URL("/auth/login?error=no_code", baseUrl));
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=no_code`);
     }
 
     try {
@@ -49,9 +49,8 @@ export async function GET(request: Request) {
         if (!userId) {
             // SECURITY: Do not create or switch users as a side effect of OAuth callback.
             // User must be authenticated before initiating the account connection.
-            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
             return NextResponse.redirect(
-                new URL("/auth/login?error=auth_required_for_connection", baseUrl)
+                `${baseUrl}/auth/login?error=auth_required_for_connection`
             );
         }
 
@@ -127,10 +126,10 @@ export async function GET(request: Request) {
 
         // Revalidate user and redirect to dashboard (session already exists from authentication)
         revalidateUser(userId);
-        return NextResponse.redirect(new URL("/dashboard?success=facebook_connected", baseUrl));
+        return NextResponse.redirect(`${baseUrl}/dashboard?success=facebook_connected`);
 
     } catch (error) {
         console.error("Meta Callback Error:", error);
-        return NextResponse.redirect(new URL("/auth/login?error=meta_callback_failed", baseUrl));
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=meta_callback_failed`);
     }
 }

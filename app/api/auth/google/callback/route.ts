@@ -9,9 +9,10 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
     const error = searchParams.get("error");
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (error) {
-        return NextResponse.redirect(new URL("/dashboard?error=google_auth_failed", req.url));
+        return NextResponse.redirect(`${baseUrl}/dashboard?error=google_auth_failed`);
     }
 
     if (!code) {
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
 
     const session = await verifySession();
     if (!session) {
-        return NextResponse.redirect(new URL("/auth/login", req.url));
+        return NextResponse.redirect(`${baseUrl}/auth/login`);
     }
 
     try {
@@ -71,9 +72,9 @@ export async function GET(req: Request) {
         });
 
         revalidateUser(session.userId as string);
-        return NextResponse.redirect(new URL("/dashboard?success=youtube_connected", req.url));
+        return NextResponse.redirect(`${baseUrl}/dashboard?success=youtube_connected`);
     } catch (error) {
         console.error("Google Auth Error:", error);
-        return NextResponse.redirect(new URL("/dashboard?error=google_auth_error", req.url));
+        return NextResponse.redirect(`${baseUrl}/dashboard?error=google_auth_error`);
     }
 }
