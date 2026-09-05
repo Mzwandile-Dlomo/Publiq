@@ -2,8 +2,9 @@ import { exchangeMetaCodeForToken, getMetaUserInfo, getFacebookPages } from "@/l
 import { exchangeMetaForLongLivedToken } from "@/lib/token-refresh";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { createSession, verifySession } from "@/lib/auth";
+import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
+import { encryptToken } from "@/lib/token-encryption";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -41,27 +42,17 @@ export async function GET(request: Request) {
         // 4. Get Pages & Instagram Accounts (page tokens from long-lived user token are non-expiring)
         const pages: FacebookPage[] = await getFacebookPages(accessToken);
 
-        // Identify current Publiq User
+        // Identify current Publiq User—must already be authenticated
         const session = await verifySession();
-        let userId = session?.userId as string | undefined;
+        const userId = session?.userId as string | undefined;
 
         if (!userId) {
-            if (userInfo.email) {
-                const existingUser = await prisma.user.findUnique({ where: { email: userInfo.email } });
-                if (existingUser) userId = existingUser.id;
-            }
-        }
-
-        if (!userId) {
-            // Create new user
-            const newUser = await prisma.user.create({
-                data: {
-                    email: userInfo.email || `${userInfo.id}@facebook.social`,
-                    name: userInfo.name,
-                    image: userInfo.picture?.data?.url,
-                }
-            });
-            userId = newUser.id;
+            // SECURITY: Do not create or switch users as a side effect of OAuth callback.
+            // User must be authenticated before initiating the account connection.
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+            return NextResponse.redirect(
+                new URL("/auth/login?error=auth_required_for_connection", baseUrl)
+            );
         }
 
         // Remove any old facebook connection for this user (user-level or previous page)
@@ -78,7 +69,7 @@ export async function GET(request: Request) {
                             provider: "facebook",
                             providerId: page.id,
                             userId: userId,
-                            accessToken: page.access_token,
+                            accessToken: encryptToken(page.access_token),
                             expiresAt: tokenExpiresAt,
                             firstName: page.name,
                             name: page.name,
@@ -101,7 +92,7 @@ export async function GET(request: Request) {
                             }
                         },
                         update: {
-                            accessToken: p.access_token,
+                            accessToken: encryptToken(p.access_token),
                             expiresAt: tokenExpiresAt,
                             userId: userId,
                         },
@@ -109,7 +100,7 @@ export async function GET(request: Request) {
                             provider: "instagram",
                             providerId: p.instagram_business_account.id,
                             userId: userId,
-                            accessToken: p.access_token,
+                            accessToken: encryptToken(p.access_token),
                             expiresAt: tokenExpiresAt,
                             firstName: "Instagram Business",
                             avatarUrl: "",
@@ -124,7 +115,7 @@ export async function GET(request: Request) {
                     provider: "facebook",
                     providerId: userInfo.id,
                     userId: userId,
-                    accessToken: accessToken,
+                    accessToken: encryptToken(accessToken),
                     expiresAt: tokenExpiresAt,
                     firstName: userInfo.name,
                     email: userInfo.email,
@@ -134,13 +125,9 @@ export async function GET(request: Request) {
             });
         }
 
-        if (!userId) {
-            return NextResponse.redirect(new URL("/auth/login?error=meta_no_user", baseUrl));
-        }
-
-        await createSession(userId);
+        // Revalidate user and redirect to dashboard (session already exists from authentication)
         revalidateUser(userId);
-        return NextResponse.redirect(new URL("/dashboard", baseUrl));
+        return NextResponse.redirect(new URL("/dashboard?success=facebook_connected", baseUrl));
 
     } catch (error) {
         console.error("Meta Callback Error:", error);

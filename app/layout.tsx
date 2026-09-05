@@ -9,6 +9,10 @@ import { Navbar } from "@/components/navbar";
 import { BottomNav } from "@/components/dashboard/bottom-nav";
 import { PWARegister } from "@/components/pwa-register";
 import { getOptionalUser } from "@/lib/auth-user";
+import { validateAppStartup } from "@/lib/init";
+
+// Validate critical configuration on app startup (server-side only)
+validateAppStartup();
 
 const sora = Sora({
   variable: "--font-sora",

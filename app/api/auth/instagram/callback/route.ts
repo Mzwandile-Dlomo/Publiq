@@ -2,8 +2,9 @@ import { exchangeMetaCodeForToken, getMetaUserInfo, getFacebookPages } from "@/l
 import { exchangeMetaForLongLivedToken } from "@/lib/token-refresh";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { createSession, verifySession } from "@/lib/auth";
+import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
+import { encryptToken } from "@/lib/token-encryption";
 
 const INSTAGRAM_REDIRECT_URI =
     process.env.INSTAGRAM_REDIRECT_URI || "http://localhost:3000/api/auth/instagram/callback";
@@ -45,26 +46,16 @@ export async function GET(request: Request) {
         const pages: FacebookPage[] = await getFacebookPages(accessToken);
         console.log("Instagram OAuth - Pages returned:", JSON.stringify(pages, null, 2));
 
-        // Identify current Publiq user
+        // Identify current Publiq user—must already be authenticated
         const session = await verifySession();
-        let userId = session?.userId as string | undefined;
+        const userId = session?.userId as string | undefined;
 
         if (!userId) {
-            if (userInfo.email) {
-                const existingUser = await prisma.user.findUnique({ where: { email: userInfo.email } });
-                if (existingUser) userId = existingUser.id;
-            }
-        }
-
-        if (!userId) {
-            const newUser = await prisma.user.create({
-                data: {
-                    email: userInfo.email || `${userInfo.id}@facebook.social`,
-                    name: userInfo.name,
-                    image: userInfo.picture?.data?.url,
-                }
-            });
-            userId = newUser.id;
+            // SECURITY: Do not create or switch users as a side effect of OAuth callback.
+            // User must be authenticated before initiating the account connection.
+            return NextResponse.redirect(
+                new URL("/auth/login?error=auth_required_for_connection", baseUrl)
+            );
         }
 
         // Collect Instagram Business accounts from pages

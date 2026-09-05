@@ -25,7 +25,9 @@ export function getMetaAuthUrl(redirectUri?: string) {
     const state = Math.random().toString(36).substring(7);
     const uri = redirectUri || META_REDIRECT_URI;
     const url = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${META_CLIENT_ID}&redirect_uri=${encodeURIComponent(uri)}&state=${state}&scope=${META_SCOPES.join(",")}`;
-    return url;
+    // NOTE: State is generated here but should be validated in the callback.
+    // Consider using oauth-state.ts for better CSRF protection that's bound to the initiating user.
+    return { url, state };
 }
 
 export async function exchangeMetaCodeForToken(code: string, redirectUri?: string) {

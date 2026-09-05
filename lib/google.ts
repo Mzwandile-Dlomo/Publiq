@@ -32,12 +32,15 @@ export const SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
 ];
 
-export function getGoogleAuthUrl() {
+export function getGoogleAuthUrl(userId?: string) {
     const client = createOAuthClient();
     return client.generateAuthUrl({
         access_type: "offline",
         prompt: "consent",
         scope: SCOPES,
+        // Note: state parameter should be added by OAuth client
+        // If you need custom state handling with user binding, 
+        // consider implementing oauth-state.ts for Google as well
     });
 }
 

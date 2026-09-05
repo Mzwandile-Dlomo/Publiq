@@ -3,6 +3,7 @@ import { getGoogleUser, createOAuthClient } from "@/lib/google";
 import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
 import { prisma } from "@/lib/prisma";
+import { encryptToken } from "@/lib/token-encryption";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -27,6 +28,14 @@ export async function GET(req: Request) {
         const { tokens } = await client.getToken(code);
         const userInfo = await getGoogleUser(tokens);
 
+        // Encrypt tokens before storing
+        const encryptedAccessToken = tokens.access_token 
+            ? encryptToken(tokens.access_token as string)
+            : null;
+        const encryptedRefreshToken = tokens.refresh_token
+            ? encryptToken(tokens.refresh_token as string)
+            : undefined;
+
         // Save to database
         await prisma.socialAccount.upsert({
             where: {
@@ -36,8 +45,8 @@ export async function GET(req: Request) {
                 },
             },
             update: {
-                accessToken: tokens.access_token as string,
-                refreshToken: tokens.refresh_token as string | undefined, // Only updates if present
+                accessToken: encryptedAccessToken || "",
+                refreshToken: encryptedRefreshToken,
                 expiresAt: tokens.expiry_date ? Math.floor(tokens.expiry_date / 1000) : undefined,
                 email: userInfo.email,
                 firstName: userInfo.given_name,
@@ -50,8 +59,8 @@ export async function GET(req: Request) {
                 userId: session.userId as string,
                 provider: "youtube",
                 providerId: userInfo.id as string,
-                accessToken: tokens.access_token as string,
-                refreshToken: tokens.refresh_token as string | undefined,
+                accessToken: encryptedAccessToken || "",
+                refreshToken: encryptedRefreshToken,
                 expiresAt: tokens.expiry_date ? Math.floor(tokens.expiry_date / 1000) : undefined,
                 email: userInfo.email,
                 firstName: userInfo.given_name,

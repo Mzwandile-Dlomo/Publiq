@@ -1,8 +1,9 @@
 import { exchangeTikTokCodeForToken, getTikTokUserInfo } from "@/lib/tiktok";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { createSession, verifySession } from "@/lib/auth";
+import { verifySession } from "@/lib/auth";
 import { revalidateUser } from "@/lib/auth-user";
+import { encryptToken } from "@/lib/token-encryption";
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -57,67 +58,59 @@ export async function GET(request: Request) {
         //    b. If yes -> Link to that user.
         //    c. If no -> Create NEW user (User placeholder email? or just use openid@tiktok.placeholder) -> Create Session -> Redirect.
 
-        // For simplicity in this `verifySession` helper:
-        // We will import verifySession but it relies on 'next/headers' cookies(), which works in Server Actions/Components/Route Handlers.
-        // So we can use it.
-
-        // Re-implementation of verifySession logic basic check or import.
+        // SECURITY: Require authenticated session before connecting social accounts.
+        // User must be logged in with a Publiq account before connecting any platform.
         const session = await verifySession();
-        let userId = session?.userId as string | undefined;
+        const userId = session?.userId as string | undefined;
 
+        if (!userId) {
+            // SECURITY: Do not create or switch users as a side effect of OAuth callback.
+            // User must be authenticated before initiating the account connection.
+            return NextResponse.redirect(new URL("/auth/login?error=auth_required_for_connection", request.url));
+        }
+
+        // Check if this TikTok account is already linked to a different Publiq user
         const existingAccount = await prisma.socialAccount.findFirst({
             where: { provider: "tiktok", providerId: open_id },
             include: { user: true }
         });
 
-        if (existingAccount) {
-            if (userId && existingAccount.userId !== userId) {
-                // Edge case: Logged in as User A, but trying to connect TikTok account linked to User B.
-                // For MVP, maybe switches account? or Error?
-                return NextResponse.redirect(new URL("/dashboard?error=account_already_linked", request.url));
-            }
+        if (existingAccount && existingAccount.userId !== userId) {
+            // This TikTok account is already linked to a different user.
+            // User cannot switch accounts via OAuth callback.
+            return NextResponse.redirect(new URL("/dashboard?error=account_already_linked", request.url));
+        }
 
-            // Log in as the existing user
-            userId = existingAccount.userId;
-        } else {
-            if (!userId) {
-                // Create New User
-                const newUser = await prisma.user.create({
-                    data: {
-                        email: `${open_id} @tiktok.social`, // Placeholder since we might not get email
-                        name: userInfo.display_name || "TikTok User",
-                        image: userInfo.avatar_url,
-                        password: "", // No password for social auth
-                    }
-                });
-                userId = newUser.id;
-            }
-
-            // Link Account
-            await prisma.socialAccount.create({
-                data: {
-                    userId: userId,
+        // Link or update TikTok account for the authenticated user
+        await prisma.socialAccount.upsert({
+            where: {
+                provider_providerId: {
                     provider: "tiktok",
-                    providerId: open_id,
-                    accessToken: access_token,
-                    refreshToken: refresh_token,
-                    expiresAt: Math.floor(Date.now() / 1000) + expires_in,
-                    firstName: userInfo.display_name, // Mapping display name to first name slightly inaccurate but works for now
-                    avatarUrl: userInfo.avatar_url,
-                    isDefault: true,
+                    providerId: open_id
                 }
-            });
-        }
+            },
+            update: {
+                accessToken: encryptToken(access_token),
+                refreshToken: encryptToken(refresh_token),
+                expiresAt: Math.floor(Date.now() / 1000) + expires_in,
+                updatedAt: new Date(),
+            },
+            create: {
+                userId: userId,
+                provider: "tiktok",
+                providerId: open_id,
+                accessToken: encryptToken(access_token),
+                refreshToken: encryptToken(refresh_token),
+                expiresAt: Math.floor(Date.now() / 1000) + expires_in,
+                firstName: userInfo.display_name,
+                avatarUrl: userInfo.avatar_url,
+                isDefault: true,
+            }
+        });
 
-        if (!userId) {
-            return NextResponse.redirect(new URL("/auth/login?error=tiktok_no_user", request.url));
-        }
-
-        // Create/Refresh Session
-        await createSession(userId);
+        // Revalidate user and redirect to dashboard (session already exists from authentication)
         revalidateUser(userId);
-
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.redirect(new URL("/dashboard?success=tiktok_connected", request.url));
 
     } catch (error) {
         console.error("TikTok Callback Error:", error);

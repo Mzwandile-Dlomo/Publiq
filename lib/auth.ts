@@ -2,7 +2,13 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 
-const SECRET_KEY = process.env.JWT_SECRET || "default-secret-key-change-me";
+// JWT_SECRET is REQUIRED and has no fallback (fail-closed security model)
+const SECRET_KEY = process.env.JWT_SECRET;
+if (!SECRET_KEY) {
+  throw new Error(
+    "FATAL: JWT_SECRET is not set. See .env.example and ensure JWT_SECRET is configured."
+  );
+}
 const key = new TextEncoder().encode(SECRET_KEY);
 
 export async function hashPassword(password: string) {

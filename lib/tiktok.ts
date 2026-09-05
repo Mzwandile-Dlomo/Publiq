@@ -20,7 +20,9 @@ const SCOPES = [
 export function getTikTokAuthUrl() {
     const csrfState = Math.random().toString(36).substring(7);
     const url = `https://www.tiktok.com/v2/auth/authorize/?client_key=${TIKTOK_CLIENT_KEY}&scope=${SCOPES.join(",")}&response_type=code&redirect_uri=${encodeURIComponent(TIKTOK_REDIRECT_URI)}&state=${csrfState}`;
-    return url;
+    // NOTE: State is generated here but should be validated in the callback.
+    // Consider using oauth-state.ts for better CSRF protection that's bound to the initiating user.
+    return { url, state: csrfState };
 }
 
 
