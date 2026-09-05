@@ -148,13 +148,13 @@ export default async function CreatorProfilePage({ params }: ProfilePageProps) {
                                 Website
                             </a>
                         )}
-                        {platforms.map((p) => (
+                        {platforms.map((p: typeof platforms[number]) => (
                             <span
-                                key={p}
+                                key={p as string}
                                 className="flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs capitalize"
                             >
-                                {PLATFORM_ICONS[p] ?? p}
-                                {p}
+                                {PLATFORM_ICONS[p as string] ?? p}
+                                {String(p)}
                             </span>
                         ))}
                     </div>
@@ -181,9 +181,9 @@ export default async function CreatorProfilePage({ params }: ProfilePageProps) {
                     <section className="mt-12">
                         <h2 className="text-xl font-semibold">Portfolio</h2>
                         <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                            {user.content.map((item) => {
-                                const views = item.publications.reduce((s, p) => s + p.views, 0);
-                                const likes = item.publications.reduce((s, p) => s + p.likes, 0);
+                            {user.content.map((item: typeof user.content[number]) => {
+                                const views = item.publications.reduce((s: number, p: typeof item.publications[number]) => s + p.views, 0);
+                                const likes = item.publications.reduce((s: number, p: typeof item.publications[number]) => s + p.likes, 0);
                                 return (
                                     <div
                                         key={item.id}
@@ -213,7 +213,7 @@ export default async function CreatorProfilePage({ params }: ProfilePageProps) {
                                                 <span>{likes.toLocaleString()} likes</span>
                                             </div>
                                             <div className="mt-2 flex flex-wrap gap-1">
-                                                {item.publications.map((pub) => (
+                                                {item.publications.map((pub: typeof item.publications[number]) => (
                                                     <span
                                                         key={pub.platform}
                                                         className="rounded-full bg-secondary px-2 py-0.5 text-[10px] capitalize"
