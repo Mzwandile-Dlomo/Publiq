@@ -59,13 +59,21 @@ describe("Security Foundation", () => {
 
     it("should warn about short JWT_SECRET in production", () => {
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = "production";
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: "production",
+        writable: true,
+        configurable: true,
+      });
       process.env.JWT_SECRET = "short"; // Less than 32 characters
 
       const result = validateConfig();
       expect(result.errors).toContain("JWT_SECRET in production must be at least 32 characters");
 
-      process.env.NODE_ENV = originalEnv;
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: originalEnv,
+        writable: true,
+        configurable: true,
+      });
     });
   });
 
