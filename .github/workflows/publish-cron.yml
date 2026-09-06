@@ -1,0 +1,33 @@
+name: Scheduled publishing
+
+on:
+  schedule:
+    # GitHub Actions cron uses UTC. The job itself has no timezone dependency.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+# Do not start a second publisher while an earlier invocation is still running.
+concurrency:
+  group: scheduled-publishing
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  publish:
+    name: Trigger scheduled publishing
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the publishing endpoint
+        env:
+          CRON_PUBLISH_URL: https://publiq-mvp.netlify.app/api/cron/publish
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$CRON_SECRET"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $CRON_SECRET" \
+            --connect-timeout 15 \
+            --max-time 240 \
+            "$CRON_PUBLISH_URL"

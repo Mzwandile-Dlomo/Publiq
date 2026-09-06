@@ -57,12 +57,16 @@ Publiq uses an authenticated cron endpoint to automatically publish scheduled co
 ### Setup
 
 1. Add a `CRON_SECRET` environment variable to your environment (use a URL-safe value, e.g. `openssl rand -hex 32`).
-2. Configure your external cron service (cron-job.org, GitHub Actions, or similar) to POST to:
+2. Configure an external cron service to POST to:
    - **URL**: `https://<your-site>.com/api/cron/publish`
    - **Method**: POST
    - **Header**: `Authorization: Bearer <CRON_SECRET>`
    - **Schedule**: Every 5 minutes (or more frequent for lower-latency publishing)
 3. The endpoint processes all users' scheduled content atomically, preventing duplicate publishing and ensuring safe retries of transient failures.
+
+### GitHub Actions scheduler
+
+This repository includes `.github/workflows/publish-cron.yml`, which triggers the production endpoint every five minutes and can also be run manually from the **Actions** tab. Before it can run, add an Actions secret named `CRON_SECRET` in **Settings → Secrets and variables → Actions**. Its value must exactly match the `CRON_SECRET` environment variable configured in Netlify. The workflow's endpoint is `https://publiq-mvp.netlify.app/api/cron/publish`.
 
 ## Documentation
 
