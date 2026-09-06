@@ -7,11 +7,11 @@ import { ArrowLeft, Globe, Play, ImageIcon, ExternalLink } from "lucide-react";
 import { getPlatformPostUrl, type Platform } from "@/lib/platforms";
 import { syncPublicationStats } from "@/lib/publication-sync";
 
-const PLATFORM_ICONS: Record<string, string> = {
-    youtube: "YT",
-    tiktok: "TT",
-    instagram: "IG",
-    facebook: "FB",
+const PLATFORM_NAMES: Record<string, string> = {
+    youtube: "YouTube",
+    tiktok: "TikTok",
+    instagram: "Instagram",
+    facebook: "Facebook",
 };
 
 interface ProfilePageProps {
@@ -179,8 +179,7 @@ export default async function CreatorProfilePage({ params }: ProfilePageProps) {
                                 key={p as string}
                                 className="flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs capitalize"
                             >
-                                {PLATFORM_ICONS[p as string] ?? p}
-                                {String(p)}
+                                {PLATFORM_NAMES[p as string] ?? String(p)}
                             </span>
                         ))}
                     </div>
