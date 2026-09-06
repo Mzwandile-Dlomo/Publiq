@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/auth-user";
 import { prisma } from "@/lib/prisma";
-import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { BrandDashboardClient } from "@/components/brand/brand-dashboard-client";
 
@@ -24,7 +23,6 @@ export default async function BrandDashboardPage() {
 
     return (
         <div className="min-h-screen">
-            <Navbar />
             <main className="mx-auto max-w-6xl px-6 py-16">
                 <BrandDashboardClient initialCampaigns={campaigns as never} />
                 <SiteFooter />

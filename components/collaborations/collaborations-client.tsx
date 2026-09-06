@@ -162,7 +162,7 @@ export function CollaborationsClient({ initialCollabs, profilePublic, username }
                                         </span>
                                     )}
                                     {collab.campaign.deadline && (
-                                        <span className="flex items-center gap-1">
+                                        <span className="flex items-center gap-1" suppressHydrationWarning>
                                             <Calendar className="h-3 w-3" />
                                             Due {new Date(collab.campaign.deadline).toLocaleDateString()}
                                         </span>

@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/auth-user";
 import { prisma } from "@/lib/prisma";
-import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { CampaignDetailClient } from "@/components/brand/campaign-detail-client";
 
@@ -44,7 +43,6 @@ export default async function CampaignDetailPage({ params }: Props) {
 
     return (
         <div className="min-h-screen">
-            <Navbar />
             <main className="mx-auto max-w-4xl px-6 py-16">
                 <CampaignDetailClient campaign={campaign as never} />
                 <SiteFooter />

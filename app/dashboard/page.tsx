@@ -3,9 +3,18 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Upload, Calendar, BarChart2, Settings, Eye, Heart } from "lucide-react";
 import { getAuthenticatedUser } from "@/lib/auth-user";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
     const user = await getAuthenticatedUser();
+
+    // A brand's primary workspace is campaign management, not publishing.
+    // Keep `/dashboard` as a stable entry point while taking each role to the
+    // workspace that matches what they can do in Publiq.
+    if (user.role === "brand") {
+        redirect("/brand");
+    }
+
     const userId = user.id;
 
     const [totalContent, scheduledCount, publishedCount, aggregates] = await Promise.all([

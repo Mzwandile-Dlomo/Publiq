@@ -1,4 +1,3 @@
-import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { DiscoverClient } from "@/components/discover/discover-client";
 
@@ -10,7 +9,6 @@ export const metadata = {
 export default function DiscoverPage() {
     return (
         <div className="min-h-screen">
-            <Navbar />
             <main className="mx-auto max-w-6xl px-6 py-16">
                 <div className="text-center">
                     <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">

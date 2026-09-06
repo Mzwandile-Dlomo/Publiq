@@ -67,7 +67,7 @@ export default async function RootLayout({
         {children}
         {user && (
           <div className="md:hidden">
-            <BottomNav />
+            <BottomNav isBrand={user.role === "brand"} />
           </div>
         )}
         <Toaster />

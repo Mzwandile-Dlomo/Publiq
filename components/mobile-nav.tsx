@@ -8,11 +8,13 @@ import { NavLink } from "@/components/nav-link";
 
 export function MobileNav({
     session,
+    isBrand,
     displayName,
     initials,
     userImage,
 }: {
     session: boolean;
+    isBrand: boolean;
     displayName: string;
     initials: string;
     userImage?: string | null;
@@ -58,20 +60,25 @@ export function MobileNav({
                     <nav className="mt-10 flex flex-col items-center gap-4 text-sm font-medium">
                         {session && (
                             <NavLink href="/dashboard" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
-                                Dashboard
+                                {isBrand ? "Campaigns" : "Dashboard"}
                             </NavLink>
                         )}
-                        {session && (
+                        {session && isBrand && (
+                            <NavLink href="/discover" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
+                                Find creators
+                            </NavLink>
+                        )}
+                        {session && !isBrand && (
                             <NavLink href="/inbox" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
                                 Inbox
                             </NavLink>
                         )}
                         {session && (
                             <NavLink href="/collaborations" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
-                                Collabs
+                                {isBrand ? "Partnerships" : "Collabs"}
                             </NavLink>
                         )}
-                        {session && (
+                        {session && !isBrand && (
                             <NavLink href="/ideas" onClick={() => setOpen(false)} className="w-full rounded-xl px-3 py-3 text-center text-muted-foreground hover:bg-secondary hover:text-foreground" activeClassName="bg-secondary text-foreground">
                                 Ideas
                             </NavLink>

@@ -9,18 +9,28 @@ import {
     Calendar,
     BarChart2,
     Settings,
+    Users,
+    BriefcaseBusiness,
 } from "lucide-react";
 
-export function BottomNav() {
+export function BottomNav({ isBrand = false }: { isBrand?: boolean }) {
     const pathname = usePathname();
 
-    const links = [
+    const creatorLinks = [
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
         { href: "/schedule", label: "Schedule", icon: Calendar },
         { href: "/upload", label: "Upload", icon: Upload }, // Center item
         { href: "/analytics", label: "Analytics", icon: BarChart2 },
         { href: "/settings", label: "Settings", icon: Settings },
     ];
+    const brandLinks = [
+        { href: "/brand", label: "Campaigns", icon: BriefcaseBusiness },
+        { href: "/discover", label: "Creators", icon: Users },
+        { href: "/brand", label: "New campaign", icon: Upload },
+        { href: "/collaborations", label: "Partners", icon: Users },
+        { href: "/settings", label: "Settings", icon: Settings },
+    ];
+    const links = isBrand ? brandLinks : creatorLinks;
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-t border-border lg:hidden pb-safe">
@@ -33,7 +43,7 @@ export function BottomNav() {
                     if (isCenter) {
                         return (
                             <Link
-                                key={link.href}
+                                key={`${link.href}-${link.label}`}
                                 href={link.href}
                                 className="relative -top-5 flex h-full w-full items-center justify-center"
                             >
@@ -46,7 +56,7 @@ export function BottomNav() {
 
                     return (
                         <Link
-                            key={link.href}
+                            key={`${link.href}-${link.label}`}
                             href={link.href}
                             className={cn(
                                 "flex flex-col items-center justify-center w-full h-full gap-1 text-[10px] font-medium transition-colors",

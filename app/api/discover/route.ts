@@ -35,7 +35,8 @@ export async function GET(req: Request) {
             bio: true,
             niches: true,
             socialAccounts: { select: { provider: true } },
-            _count: { select: { content: true } },
+            // Match the count shown on /profile/[username], which lists published content only.
+            _count: { select: { content: { where: { status: "published" } } } },
         },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * pageSize,

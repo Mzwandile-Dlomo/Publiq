@@ -117,12 +117,8 @@ export function DiscoverClient() {
                                 .toUpperCase();
                             const platforms = [...new Set(creator.socialAccounts.map((a) => a.provider))];
 
-                            return (
-                                <Link
-                                    key={creator.id}
-                                    href={`/profile/${creator.username}`}
-                                    className="flex flex-col rounded-2xl border border-border bg-card p-5 transition-all hover:border-foreground/20 hover:shadow-sm"
-                                >
+                            const card = (
+                                <div className="flex h-full flex-col rounded-2xl border border-border bg-card p-5">
                                     <div className="flex items-center gap-3">
                                         {creator.image ? (
                                             <Image
@@ -181,7 +177,21 @@ export function DiscoverClient() {
                                             ))}
                                         </div>
                                     </div>
+                                </div>
+                            );
+
+                            // Public profiles live at /profile/[username]; a creator without one
+                            // has nowhere to link, so the card stays plain rather than 404ing.
+                            return creator.username ? (
+                                <Link
+                                    key={creator.id}
+                                    href={`/profile/${creator.username}`}
+                                    className="rounded-2xl transition-all hover:[&>div]:border-foreground/20 hover:[&>div]:shadow-sm"
+                                >
+                                    {card}
                                 </Link>
+                            ) : (
+                                <div key={creator.id}>{card}</div>
                             );
                         })}
                     </div>

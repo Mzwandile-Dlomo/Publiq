@@ -9,6 +9,7 @@ export async function Navbar() {
     const session = Boolean(user);
 
     const displayName = user?.name || user?.email || "Creator";
+    const isBrand = user?.role === "brand";
     const initials = displayName
         .split(" ")
         .map((part: string) => part[0])
@@ -31,6 +32,39 @@ export async function Navbar() {
             {/* Desktop nav – visible md+ only */}
             <nav className="desktop-only items-center gap-5 text-sm font-medium">
                 {session ? (
+                    isBrand ? (
+                    <>
+                        <NavLink
+                            href="/brand"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                        >
+                            Campaigns
+                        </NavLink>
+                        <NavLink
+                            href="/discover"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                            activePaths={["/profile"]}
+                        >
+                            Find creators
+                        </NavLink>
+                        <NavLink
+                            href="/collaborations"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                        >
+                            Partnerships
+                        </NavLink>
+                        <NavLink
+                            href="/settings"
+                            className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                            activeClassName="rounded-full px-3 py-1.5 bg-secondary text-foreground font-semibold"
+                        >
+                            Settings
+                        </NavLink>
+                    </>
+                    ) : (
                     <>
                         <NavLink
                             href="/dashboard"
@@ -76,6 +110,7 @@ export async function Navbar() {
                             Ideas
                         </NavLink>
                     </>
+                    )
                 ) : null}
                 {session ? (
                     <>
@@ -133,6 +168,7 @@ export async function Navbar() {
             {/* Mobile nav */}
             <MobileNav
                 session={!!session}
+                isBrand={isBrand}
                 displayName={displayName}
                 initials={initials}
                 userImage={user?.image}

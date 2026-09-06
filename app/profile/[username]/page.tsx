@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, Play, ImageIcon } from "lucide-react";
+import { ArrowLeft, Globe, Play, ImageIcon } from "lucide-react";
 
 const PLATFORM_ICONS: Record<string, string> = {
     youtube: "YT",
@@ -92,8 +91,14 @@ export default async function CreatorProfilePage({ params }: ProfilePageProps) {
 
     return (
         <div className="min-h-screen">
-            <Navbar />
             <main className="mx-auto max-w-4xl px-6 py-16">
+                <Link
+                    href="/discover"
+                    className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to creators
+                </Link>
                 {/* Hero */}
                 <div className="flex flex-col items-center gap-6 text-center">
                     {user.image ? (
