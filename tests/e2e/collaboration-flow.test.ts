@@ -3,9 +3,6 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 type PrismaClientConstructor = typeof import(".prisma/client").PrismaClient;
-const { PrismaClient } = (await import("@prisma/client")) as unknown as {
-  PrismaClient: PrismaClientConstructor;
-};
 
 const auth = vi.hoisted(() => ({ verifySession: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ verifySession: auth.verifySession }));
@@ -28,6 +25,12 @@ describeDatabaseE2E("brand and creator collaboration flow", () => {
   let outsiderId: string;
 
   beforeAll(async () => {
+    // Imported lazily so this file can still be collected when the Prisma client
+    // has not been generated (the skipped unit-test run does not generate one).
+    const { PrismaClient } = (await import("@prisma/client")) as unknown as {
+      PrismaClient: PrismaClientConstructor;
+    };
+
     pool = new Pool({ connectionString: databaseUrl });
     prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
     process.env.DATABASE_URL = databaseUrl;

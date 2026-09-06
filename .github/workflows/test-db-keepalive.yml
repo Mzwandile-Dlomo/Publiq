@@ -17,6 +17,7 @@ jobs:
   keep-alive:
     name: Query test database
     runs-on: ubuntu-latest
+    environment: tst
     env:
       E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
     steps:
