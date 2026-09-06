@@ -17,7 +17,7 @@ jobs:
   keep-alive:
     name: Query test database
     runs-on: ubuntu-latest
-    environment: tst
+    # E2E_DATABASE_URL is a repository Actions secret.
     env:
       E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
     steps:

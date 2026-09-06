@@ -104,7 +104,7 @@ Set `E2E_DATABASE_URL` to a dedicated test database only.
 ## Test database keep-alive
 
 The `Test Database Keep Alive` GitHub Actions workflow runs a read-only `SELECT 1`
-every three days using the `E2E_DATABASE_URL` Actions secret. It can also be run
+every three days using the `E2E_DATABASE_URL` repository Actions secret. It can also be run
 manually from the Actions tab. To test it locally:
 
 ```bash

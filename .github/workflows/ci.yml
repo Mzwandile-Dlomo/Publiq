@@ -102,9 +102,9 @@ jobs:
   integration-test:
     name: PostgreSQL integration tests
     runs-on: ubuntu-latest
-    environment: tst
     needs: [lint, typecheck, unit-test]
-    # E2E_DATABASE_URL is an Actions secret in the tst environment.
+    # E2E_DATABASE_URL is a repository Actions secret. It is empty for pull
+    # requests from forks, so every step that needs it is guarded below.
     env:
       E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
     steps:
@@ -134,9 +134,9 @@ jobs:
   browser-e2e:
     name: Browser end-to-end tests
     runs-on: ubuntu-latest
-    environment: tst
     needs: [build]
-    # E2E_DATABASE_URL is an Actions secret in the tst environment.
+    # E2E_DATABASE_URL is a repository Actions secret. It is empty for pull
+    # requests from forks, so every step that needs it is guarded below.
     env:
       E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
     steps:
