@@ -80,6 +80,11 @@ describe("publish-queue", () => {
       expect(shouldGiveUp).toBe(true);
     });
 
+    it("does not retry platforms that are not available", () => {
+      const { shouldGiveUp } = calculateNextRetry(1, "TikTok is not yet available");
+      expect(shouldGiveUp).toBe(true);
+    });
+
     it("returns retryable for rate limit errors", () => {
       const { shouldGiveUp } = calculateNextRetry(1, "rate_limit_exceeded");
 

@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS "public";
+
 CREATE TYPE "PublicationLogStatus" AS ENUM ('pending', 'claimed', 'publishing', 'published', 'failed', 'retry');
 CREATE TYPE "PublishStatus" AS ENUM ('draft', 'scheduled', 'published', 'failed');
 
@@ -132,13 +134,20 @@ CREATE TABLE "Collaboration" (
 
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+CREATE INDEX "User_role_profilePublic_idx" ON "User"("role", "profilePublic");
 CREATE INDEX "SocialAccount_userId_idx" ON "SocialAccount"("userId");
 CREATE UNIQUE INDEX "SocialAccount_provider_providerId_key" ON "SocialAccount"("provider", "providerId");
+CREATE INDEX "Content_userId_createdAt_idx" ON "Content"("userId", "createdAt");
+CREATE INDEX "Content_status_scheduledAt_idx" ON "Content"("status", "scheduledAt");
+CREATE INDEX "Publication_contentId_status_idx" ON "Publication"("contentId", "status");
+CREATE INDEX "Publication_socialAccountId_idx" ON "Publication"("socialAccountId");
 CREATE UNIQUE INDEX "PublicationLog_idempotencyKey_key" ON "PublicationLog"("idempotencyKey");
 CREATE INDEX "PublicationLog_status_nextRetryAt_idx" ON "PublicationLog"("status", "nextRetryAt");
 CREATE INDEX "PublicationLog_contentId_platform_idx" ON "PublicationLog"("contentId", "platform");
 CREATE INDEX "PublicationLog_claimedAt_idx" ON "PublicationLog"("claimedAt");
 CREATE UNIQUE INDEX "Subscription_userId_key" ON "Subscription"("userId");
+CREATE INDEX "Campaign_brandId_createdAt_idx" ON "Campaign"("brandId", "createdAt");
+CREATE INDEX "Campaign_status_deadline_idx" ON "Campaign"("status", "deadline");
 CREATE INDEX "Collaboration_creatorId_idx" ON "Collaboration"("creatorId");
 CREATE INDEX "Collaboration_campaignId_idx" ON "Collaboration"("campaignId");
 CREATE UNIQUE INDEX "Collaboration_campaignId_creatorId_key" ON "Collaboration"("campaignId", "creatorId");

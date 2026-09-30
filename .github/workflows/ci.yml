@@ -96,7 +96,8 @@ jobs:
           # repository secrets are intentionally unavailable.
           DATABASE_URL: postgresql://ci:ci@localhost:5432/publiq
           JWT_SECRET: ci-build-only-jwt-secret-not-used-at-runtime
-          CRON_SECRET: ci-build-only-cron-secret-not-used-at-runtime
+          CRON_SECRET: ci-build-only-cron-secret-not-used-at-runtime-123456
+          TOKEN_ENCRYPTION_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         run: npm run build
 
   integration-test:

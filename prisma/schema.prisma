@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -27,24 +27,24 @@ enum PublishStatus {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  email          String          @unique
-  name           String?
-  image          String?
-  password       String?
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  image         String?
+  password      String?
   // "creator" (default) or "brand"
-  role           String          @default("creator")
+  role          String   @default("creator")
   // public profile fields
-  username       String?         @unique
-  bio            String?
-  niches         String[]        @default([])
+  username      String?  @unique
+  bio           String?
+  niches        String[] @default([])
   // social links shown on public profile
-  website        String?
+  website       String?
   // public profile visibility
-  profilePublic  Boolean         @default(false)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  
+  profilePublic Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
   socialAccounts SocialAccount[]
   content        Content[]
   subscription   Subscription?
@@ -52,13 +52,15 @@ model User {
   campaigns      Campaign[]      @relation("BrandCampaigns")
   // creator relations
   collaborations Collaboration[] @relation("CreatorCollaborations")
+
+  @@index([role, profilePublic])
 }
 
 model SocialAccount {
   id           String   @id @default(cuid())
   userId       String
-  provider     String   // "youtube", "tiktok", "instagram", "facebook"
-  providerId   String   // The ID on the platform
+  provider     String // "youtube", "tiktok", "instagram", "facebook"
+  providerId   String // The ID on the platform
   accessToken  String
   refreshToken String?
   expiresAt    Int?
@@ -67,13 +69,13 @@ model SocialAccount {
   email        String?
   avatarUrl    String?
   isDefault    Boolean  @default(false)
-  tokenStatus  String?  // null = valid, "revoked" = needs reconnect
+  tokenStatus  String? // null = valid, "revoked" = needs reconnect
   createdAt    DateTime @default(now())
-  name         String?  // Display name for Pages/Channel
+  name         String? // Display name for Pages/Channel
   updatedAt    DateTime @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  publications Publication[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publications    Publication[]
   publicationLogs PublicationLog[]
 
   @@unique([provider, providerId])
@@ -81,75 +83,81 @@ model SocialAccount {
 }
 
 model Content {
-  id          String   @id @default(cuid())
-  userId      String
-  title       String
-  description String?
-  mediaUrl    String
-  mediaType   String   @default("video") // "video" or "image"
-  thumbnailUrl String?
-  status      String   @default("draft") // "draft", "scheduled", "published"
-  scheduledAt DateTime?
+  id            String        @id @default(cuid())
+  userId        String
+  title         String
+  description   String?
+  mediaUrl      String
+  mediaType     String        @default("video") // "video" or "image"
+  thumbnailUrl  String?
+  status        String        @default("draft") // "draft", "scheduled", "published"
+  scheduledAt   DateTime?
   publishStatus PublishStatus @default(draft)
-  publishedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  publications      Publication[]
-  publicationLogs   PublicationLog[]
+  publishedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publications    Publication[]
+  publicationLogs PublicationLog[]
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   collaborations Collaboration[]
+
+  @@index([userId, createdAt])
+  @@index([status, scheduledAt])
 }
 
 model Publication {
-  id          String   @id @default(cuid())
-  contentId   String
-  platform    String   // "youtube", "tiktok", etc
-  status      String   @default("pending") // "pending", "success", "failed"
-  platformPostId String?
-  publishedAt DateTime?
-  errorMessage String?
-  views       Int      @default(0)
-  likes       Int      @default(0)
-  comments    Int      @default(0)
+  id              String    @id @default(cuid())
+  contentId       String
+  platform        String // "youtube", "tiktok", etc
+  status          String    @default("pending") // "pending", "success", "failed"
+  platformPostId  String?
+  publishedAt     DateTime?
+  errorMessage    String?
+  views           Int       @default(0)
+  likes           Int       @default(0)
+  comments        Int       @default(0)
   socialAccountId String?
 
-  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  content       Content        @relation(fields: [contentId], references: [id], onDelete: Cascade)
   socialAccount SocialAccount? @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
+
+  @@index([contentId, status])
+  @@index([socialAccountId])
 }
 
 model PublicationLog {
-  id              String                 @id @default(cuid())
+  id              String               @id @default(cuid())
   contentId       String
-  platform        String                 // "youtube", "tiktok", "instagram", "facebook"
+  platform        String // "youtube", "tiktok", "instagram", "facebook"
   socialAccountId String?
-  status          PublicationLogStatus   @default(pending)
-  publishedUrl    String?                // URL of published content
-  claimedAt       DateTime?              // When this was claimed for publishing
-  claimedBy       String?                // Job ID or hostname for debugging
-  attemptCount    Int                    @default(0)
-  idempotencyKey  String                 @unique
-  lastError       String?                // Error message from platform
-  nextRetryAt     DateTime?              // When to retry next
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  
-  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  status          PublicationLogStatus @default(pending)
+  publishedUrl    String? // URL of published content
+  claimedAt       DateTime? // When this was claimed for publishing
+  claimedBy       String? // Job ID or hostname for debugging
+  attemptCount    Int                  @default(0)
+  idempotencyKey  String               @unique
+  lastError       String? // Error message from platform
+  nextRetryAt     DateTime? // When to retry next
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  content       Content        @relation(fields: [contentId], references: [id], onDelete: Cascade)
   socialAccount SocialAccount? @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
-  
+
   @@index([status, nextRetryAt])
   @@index([contentId, platform])
   @@index([claimedAt])
 }
 
 model Subscription {
-  id              String   @id @default(cuid())
-  userId          String   @unique
+  id               String  @id @default(cuid())
+  userId           String  @unique
   payfastPaymentId String?
-  status          String   // "active", "canceled", etc
-  plan            String   @default("free")
-  
+  status           String // "active", "canceled", etc
+  plan             String  @default("free")
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -158,45 +166,48 @@ model Subscription {
 // ──────────────────────────────────────────────────────────────────────────────
 
 model Campaign {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   brandId     String
   title       String
   description String?
-  brief       String?  // detailed creative brief
+  brief       String? // detailed creative brief
   budget      Float?
-  currency    String   @default("ZAR")
+  currency    String    @default("ZAR")
   // target audience / content requirements
-  niches      String[] @default([])
-  platforms   String[] @default([])
+  niches      String[]  @default([])
+  platforms   String[]  @default([])
   // lifecycle: "draft" | "open" | "in_progress" | "completed" | "canceled"
-  status      String   @default("draft")
+  status      String    @default("draft")
   deadline    DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   brand          User            @relation("BrandCampaigns", fields: [brandId], references: [id], onDelete: Cascade)
   collaborations Collaboration[]
+
+  @@index([brandId, createdAt])
+  @@index([status, deadline])
 }
 
 model Collaboration {
-  id           String   @id @default(cuid())
-  campaignId   String
-  creatorId    String
+  id         String   @id @default(cuid())
+  campaignId String
+  creatorId  String
   // lifecycle: "invited" | "applied" | "accepted" | "in_progress" | "submitted" | "approved" | "paid" | "rejected"
-  status       String   @default("invited")
+  status     String   @default("invited")
   // agreed fee for this collaboration
-  fee          Float?
-  currency     String   @default("ZAR")
+  fee        Float?
+  currency   String   @default("ZAR")
   // creator's proposal / pitch
-  proposal     String?
+  proposal   String?
   // link to delivered content (content record)
-  contentId    String?
+  contentId  String?
   // feedback from brand
-  feedback     String?
+  feedback   String?
   // payment reference (e.g. PayFast payment id)
-  paymentRef   String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  paymentRef String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   creator  User     @relation("CreatorCollaborations", fields: [creatorId], references: [id], onDelete: Cascade)

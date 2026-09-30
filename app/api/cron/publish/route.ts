@@ -11,6 +11,39 @@ import {
 } from "@/lib/publish-queue";
 import { randomUUID, timingSafeEqual } from "node:crypto";
 
+async function syncContentStatus(contentId: string) {
+  const publications = await prisma.publication.findMany({
+    where: { contentId },
+    select: { status: true, publishedAt: true },
+  });
+  if (publications.length === 0) return;
+
+  const successful = publications.filter((item) => item.status === "success");
+  const allFinished = publications.every((item) =>
+    ["success", "failed", "unavailable"].includes(item.status)
+  );
+
+  if (successful.length > 0) {
+    const firstPublishedAt = successful
+      .map((item) => item.publishedAt)
+      .filter((value): value is Date => value !== null)
+      .sort((a, b) => a.getTime() - b.getTime())[0];
+    await prisma.content.update({
+      where: { id: contentId },
+      data: {
+        status: "published",
+        publishStatus: "published",
+        publishedAt: firstPublishedAt,
+      },
+    });
+  } else if (allFinished) {
+    await prisma.content.update({
+      where: { id: contentId },
+      data: { status: "failed", publishStatus: "failed" },
+    });
+  }
+}
+
 /**
  * Validate Bearer token from Authorization header
  */
@@ -81,6 +114,18 @@ export async function POST(req: Request) {
             claimedLog.id,
             `${config?.name || platform} is not yet available`
           );
+          await prisma.publication.updateMany({
+            where: {
+              contentId: log.contentId,
+              platform: log.platform,
+              socialAccountId: log.socialAccountId,
+            },
+            data: {
+              status: marked.status === "failed" ? "failed" : "pending",
+              errorMessage: `${config?.name || platform} is not yet available`,
+            },
+          });
+          await syncContentStatus(log.contentId);
           if (marked.status === "retry") retry++;
           else failed++;
           continue;
@@ -101,29 +146,20 @@ export async function POST(req: Request) {
 
         // Mark as successfully published
         await markPublicationSuccess(claimedLog.id, result.platformPostId);
-        await prisma.$transaction([
-          prisma.publication.updateMany({
-            where: {
-              contentId: log.contentId,
-              platform: log.platform,
-              socialAccountId: log.socialAccountId,
-            },
-            data: {
-              status: "success",
-              platformPostId: result.platformPostId,
-              publishedAt: result.publishedAt,
-              errorMessage: null,
-            },
-          }),
-          prisma.content.update({
-            where: { id: log.contentId },
-            data: {
-              status: "published",
-              publishStatus: "published",
-              publishedAt: result.publishedAt,
-            },
-          }),
-        ]);
+        await prisma.publication.updateMany({
+          where: {
+            contentId: log.contentId,
+            platform: log.platform,
+            socialAccountId: log.socialAccountId,
+          },
+          data: {
+            status: "success",
+            platformPostId: result.platformPostId,
+            publishedAt: result.publishedAt,
+            errorMessage: null,
+          },
+        });
+        await syncContentStatus(log.contentId);
         published++;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error";
@@ -145,6 +181,7 @@ export async function POST(req: Request) {
             errorMessage: message,
           },
         });
+        await syncContentStatus(log.contentId);
 
         // Track if it will be retried or permanently failed
         if (marked.status === "retry") {

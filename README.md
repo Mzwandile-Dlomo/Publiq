@@ -71,6 +71,8 @@ This repository includes `.github/workflows/publish-cron.yml`, which triggers th
 ## Documentation
 
 For detailed implementation phases and technical plans, see [docs/implementation_plan.md](docs/implementation_plan.md).
+Production configuration, database migration, release verification, and incident
+steps are documented in [docs/production-runbook.md](docs/production-runbook.md).
 
 ## Demo collaboration data
 

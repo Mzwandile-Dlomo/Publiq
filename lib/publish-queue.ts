@@ -71,6 +71,7 @@ export function calculateNextRetry(
     "not found",
     "invalid_oauth_token",
     "invalid_access_token",
+    "not yet available",
   ];
 
   const isPermanent = permanentErrorPatterns.some((pattern) =>
@@ -133,14 +134,14 @@ export async function claimPublication(
   // Include the eligibility predicate in the write. Updating by primary key
   // alone lets two workers that read the same row both claim it.
   const claimed = await prisma.publicationLog.updateMany({
-      where: { id: log.id, ...readyToRun(now) },
-      data: {
-        status: "claimed",
-        claimedAt: now,
-        claimedBy: jobId,
-        attemptCount: { increment: 1 },
-      },
-    });
+    where: { id: log.id, ...readyToRun(now) },
+    data: {
+      status: "claimed",
+      claimedAt: now,
+      claimedBy: jobId,
+      attemptCount: { increment: 1 },
+    },
+  });
 
   if (claimed.count !== 1) {
     return null;

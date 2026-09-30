@@ -53,6 +53,15 @@ export async function POST(
         }
 
         try {
+            const claim = await prisma.publication.updateMany({
+                where: { id: publication.id, status: "pending" },
+                data: { status: "publishing", errorMessage: null },
+            });
+            if (claim.count !== 1) {
+                results.push({ platform, status: "skipped", error: "Publication is already being processed" });
+                continue;
+            }
+
             const publisher = await getPublisher(platform);
             const result = await publisher.publish(session.userId as string, {
                 id: content.id,
@@ -90,13 +99,15 @@ export async function POST(
     }
 
     // Update content status based on results
-    const allSucceeded = results.every((r) => r.status === "success");
     const anySucceeded = results.some((r) => r.status === "success");
+    const allFinished = results.every((r) => ["success", "failed"].includes(r.status));
 
     await prisma.content.update({
         where: { id },
         data: {
-            status: allSucceeded ? "published" : anySucceeded ? "published" : "draft",
+            status: anySucceeded ? "published" : allFinished ? "failed" : content.status,
+            publishStatus: anySucceeded ? "published" : allFinished ? "failed" : content.publishStatus,
+            publishedAt: anySucceeded ? new Date() : content.publishedAt,
         },
     });
 

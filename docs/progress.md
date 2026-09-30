@@ -8,15 +8,15 @@ test, pull request, or deployment evidence where available.
 
 ## Current status
 
-**Last updated:** 2026-09-05  
-**Overall:** ✅ **Workstream 1 COMPLETE & VALIDATED** — Security foundation fully implemented, tested (123/123 tests passing), TypeScript-clean (0 errors), ESLint-clean (0 issues), production build succeeds. **Workstream 2 PLAN COMPLETE** — Publishing Reliability implementation plan created with 8 tasks (atomic claiming, idempotency, exponential backoff, operator dashboard). README updated to reflect actual stack (Next.js 16, Prisma, UploadThing, PayFast, custom JWT auth).
+**Last updated:** 2026-09-30
+**Overall:** Production hardening is in progress. The scheduled-content handoff now creates worker queue records transactionally, claims use an atomic eligibility predicate with stale-claim recovery, worker batches are bounded, and successful/failed worker outcomes synchronize to creator-visible publication state. Lint, typecheck, and unit tests pass locally; external-provider and database-backed release validation are still required before launch.
 
 | Workstream | Status | Current state | Next evidence needed |
 | --- | --- | --- | --- |
 | Security foundation | **✅ COMPLETE** | Config validation, token encryption, OAuth state CSRF protection fully implemented, tested (123/123 tests passing including 10 security-specific tests), TypeScript-clean (0 errors), and ESLint-clean (0 issues). Production build succeeds. | Run application with missing secret to confirm startup failure; manual OAuth flow test to verify encrypted token storage in DB. |
-| Publishing reliability | Ready | Cron-based publishing has no atomic claim, idempotency, or retry queue. Ready to implement after security foundation complete. | Duplicate-run and retry tests. |
+| Publishing reliability | **In progress** | Scheduled content now enters the queue atomically; claims are race-safe, bounded, and recover stale workers. Retry tests pass. | Database concurrency test and real provider sandbox verification. |
 | Launch-scope integrity | Blocked (awaits publishing) | Public copy and product scope need alignment with implemented capabilities. | Approved launch copy and platform verification record. |
-| Quality and delivery | **✅ IN PROGRESS** | All code quality gates passed: ESLint 0 issues, TypeScript 0 errors, 123/123 tests passing, production build validated. Migrations and environment template pending. | Migrations generation; environment template creation; clean-clone CI validation. |
+| Quality and delivery | **In progress** | Migration baseline, environment template, health endpoint, security headers, error/404 UI, CI, and production runbook exist. | Validate migration baseline against the existing production database and complete a staged deployment. |
 | Critical automated coverage | **✅ IN PROGRESS** | Unit tests complete (123 total); security foundation fully covered (10/10 tests); core route/database flows not yet fully covered. | Passing integration/E2E suite for publishing reliability. |
 
 ## Baseline findings
