@@ -3,14 +3,15 @@ import { verifySession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { PLATFORMS } from "@/lib/platforms";
+import { generateIdempotencyKey } from "@/lib/publish-queue";
 
 const contentSchema = z.object({
-    title: z.string().min(1),
-    description: z.string().optional(),
+    title: z.string().trim().min(1).max(200),
+    description: z.string().max(5000).optional(),
     mediaUrl: z.string().url(),
     mediaType: z.enum(["video", "image"]).default("video"),
     thumbnailUrl: z.string().url().optional(),
-    scheduledAt: z.string().optional(),
+    scheduledAt: z.string().datetime({ offset: true }).optional(),
     status: z.enum(["draft", "scheduled"]).optional(),
     platforms: z.array(z.enum(PLATFORMS)).min(1, "Select at least one platform"),
     platformAccounts: z.record(z.string(), z.string()).optional(),
@@ -24,7 +25,15 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { title, description, mediaUrl, mediaType, thumbnailUrl, platforms, platformAccounts } = contentSchema.parse(body);
+        const { title, description, mediaUrl, mediaType, thumbnailUrl, platforms, platformAccounts, status } = contentSchema.parse(body);
+        const scheduledAt = body.scheduledAt ? new Date(body.scheduledAt) : null;
+
+        if (status === "scheduled" && (!scheduledAt || scheduledAt <= new Date())) {
+            return NextResponse.json(
+                { error: "scheduledAt must be a future date when scheduling content" },
+                { status: 400 }
+            );
+        }
 
         type SocialAccountRecord = { id: string; provider: string };
 
@@ -56,34 +65,51 @@ export async function POST(req: Request) {
             }
         }
 
-        const content = await prisma.content.create({
-            data: {
+        const resolvedPublications = platforms.map((platform) => {
+            const selectedAccountId = platformAccounts?.[platform];
+            const socialAccountId = selectedAccountId
+                ? accountById.get(selectedAccountId)?.id
+                : defaultByProvider.get(platform)?.id;
+
+            return { platform, socialAccountId: socialAccountId ?? null };
+        });
+
+        const content = await prisma.$transaction(async (tx) => {
+            const created = await tx.content.create({
+              data: {
                 userId: session.userId as string,
                 title,
                 description,
                 mediaUrl,
                 mediaType,
                 thumbnailUrl,
-                status: body.status || "draft",
-                scheduledAt: body.scheduledAt,
+                status: status || "draft",
+                publishStatus: status || "draft",
+                scheduledAt,
                 publications: {
-                    create: platforms.map((platform) => {
-                        const selectedAccountId = platformAccounts?.[platform];
-                        const resolvedAccountId = selectedAccountId
-                            ? accountById.get(selectedAccountId)?.id
-                            : defaultByProvider.get(platform)?.id;
-
-                        return {
-                            platform,
-                            status: "pending",
-                            socialAccountId: resolvedAccountId ?? null,
-                        };
-                    }),
+                    create: resolvedPublications.map(({ platform, socialAccountId }) => ({
+                        platform,
+                        status: "pending",
+                        socialAccountId,
+                    })),
                 },
-            },
-            include: {
-                publications: true,
-            },
+              },
+              include: { publications: true },
+            });
+
+            if (status === "scheduled" && scheduledAt) {
+                await tx.publicationLog.createMany({
+                    data: resolvedPublications.map(({ platform, socialAccountId }) => ({
+                        contentId: created.id,
+                        platform,
+                        socialAccountId,
+                        nextRetryAt: scheduledAt,
+                        idempotencyKey: generateIdempotencyKey(created.id, platform, 1),
+                    })),
+                });
+            }
+
+            return created;
         });
 
         return NextResponse.json({ content });

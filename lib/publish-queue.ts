@@ -1,6 +1,21 @@
 import { prisma } from "./prisma";
 import type { PublicationLog } from "./publication-log-types";
 
+const CLAIM_TIMEOUT_MS = 15 * 60 * 1000;
+
+function readyToRun(now: Date) {
+  return {
+    OR: [
+      { status: "pending" as const, nextRetryAt: { lte: now } },
+      { status: "retry" as const, nextRetryAt: { lte: now } },
+      {
+        status: "claimed" as const,
+        claimedAt: { lte: new Date(now.getTime() - CLAIM_TIMEOUT_MS) },
+      },
+    ],
+  };
+}
+
 /**
  * Generate an idempotency key for a publication attempt
  * Different attempts get different keys; same attempt always gets same key
@@ -99,14 +114,14 @@ export async function claimPublication(
   platform: string,
   jobId: string
 ): Promise<PublicationLog | null> {
+  const now = new Date();
   // Find a pending or retry publication for this content+platform
   // Sort by createdAt to process oldest first (FIFO)
   const log = await prisma.publicationLog.findFirst({
     where: {
       contentId,
       platform,
-      status: { in: ["pending", "retry"] },
-      nextRetryAt: { lte: new Date() }, // Don't retry too early
+      ...readyToRun(now),
     },
     orderBy: { createdAt: "asc" },
   });
@@ -115,25 +130,23 @@ export async function claimPublication(
     return null;
   }
 
-  // Atomically update: mark as claimed if status hasn't changed
-  // If another job already claimed it, this update will fail (race condition)
-  try {
-    const updated = await prisma.publicationLog.update({
-      where: { id: log.id },
+  // Include the eligibility predicate in the write. Updating by primary key
+  // alone lets two workers that read the same row both claim it.
+  const claimed = await prisma.publicationLog.updateMany({
+      where: { id: log.id, ...readyToRun(now) },
       data: {
         status: "claimed",
-        claimedAt: new Date(),
+        claimedAt: now,
         claimedBy: jobId,
         attemptCount: { increment: 1 },
       },
     });
 
-    return updated;
-  } catch {
-    // Race condition: another job claimed first
-    // Return null to skip this publication
+  if (claimed.count !== 1) {
     return null;
   }
+
+  return prisma.publicationLog.findUnique({ where: { id: log.id } });
 }
 
 /**
@@ -261,10 +274,10 @@ export async function getPublicationStats() {
  * @returns Array of publications ready to be claimed
  */
 export async function getPendingPublications() {
+  const now = new Date();
   return prisma.publicationLog.findMany({
     where: {
-      status: { in: ["pending", "retry"] },
-      nextRetryAt: { lte: new Date() },
+      ...readyToRun(now),
     },
     include: {
       content: {
@@ -276,5 +289,6 @@ export async function getPendingPublications() {
       },
     },
     orderBy: { createdAt: "asc" },
+    take: 25,
   });
 }

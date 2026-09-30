@@ -14,7 +14,7 @@ const runBrowserE2E = Boolean(databaseUrl);
 test.describe("brand and creator collaboration", () => {
   test.skip(!runBrowserE2E, "E2E_DATABASE_URL is required for browser tests");
 
-  test("a brand discovers, invites, and accepts a creator", async ({ browser, request }, testInfo) => {
+  test("a brand discovers, invites, and accepts a creator", async ({ browser, request }) => {
     const suffix = `${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
     const creatorEmail = `browser-creator-${suffix}@publiq.test`;
     const brandEmail = `browser-brand-${suffix}@publiq.test`;

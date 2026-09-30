@@ -51,6 +51,7 @@ export function PublishForm({ fileUrl, fileName, mediaType }: PublishFormProps) 
     const [isScheduling, setIsScheduling] = useState(false);
     const [contentId, setContentId] = useState<string | null>(null);
     const [date, setDate] = useState<Date | undefined>(undefined);
+    const [time, setTime] = useState("09:00");
     const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([]);
     const [facebookPages, setFacebookPages] = useState<SocialAccount[]>([]);
     const [selectedFacebookPageId, setSelectedFacebookPageId] = useState<string | null>(null);
@@ -105,6 +106,12 @@ export function PublishForm({ fileUrl, fileName, mediaType }: PublishFormProps) 
             const platformAccounts = selectedPlatforms.includes("facebook") && selectedFacebookPageId
                 ? { facebook: selectedFacebookPageId }
                 : undefined;
+            const scheduledAt = date ? new Date(date) : undefined;
+            if (scheduledAt) {
+                const [hours, minutes] = time.split(":").map(Number);
+                scheduledAt.setHours(hours, minutes, 0, 0);
+            }
+
             const res = await fetch("/api/content", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -113,7 +120,7 @@ export function PublishForm({ fileUrl, fileName, mediaType }: PublishFormProps) 
                     description: data.description,
                     mediaUrl: fileUrl,
                     mediaType,
-                    scheduledAt: date,
+                    scheduledAt,
                     status,
                     platforms: selectedPlatforms,
                     platformAccounts,
@@ -145,6 +152,13 @@ export function PublishForm({ fileUrl, fileName, mediaType }: PublishFormProps) 
         if (isSaving || isPublishing || isScheduling) return;
         if (!date) {
             toast.error("Please select a date and time");
+            return;
+        }
+        const scheduledAt = new Date(date);
+        const [hours, minutes] = time.split(":").map(Number);
+        scheduledAt.setHours(hours, minutes, 0, 0);
+        if (scheduledAt <= new Date()) {
+            toast.error("Choose a time in the future");
             return;
         }
         setIsScheduling(true);
@@ -292,11 +306,27 @@ export function PublishForm({ fileUrl, fileName, mediaType }: PublishFormProps) 
                                         selected={date}
                                         onSelect={setDate}
                                         initialFocus
-                                        disabled={(date) => date < new Date()}
+                                        disabled={(candidate) => {
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+                                            return candidate < today;
+                                        }}
                                     />
                                 </PopoverContent>
                             </Popover>
-                            {date && <p className="text-xs text-muted-foreground">Will be published on {format(date, "PPP")}</p>}
+                            {date && (
+                                <div className="flex items-center gap-3">
+                                    <Label htmlFor="publish-time" className="text-xs">Time</Label>
+                                    <Input
+                                        id="publish-time"
+                                        type="time"
+                                        className="w-32"
+                                        value={time}
+                                        onChange={(event) => setTime(event.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {date && <p className="text-xs text-muted-foreground">Will be published on {format(date, "PPP")} at {time}</p>}
                         </div>
                     </div>
 

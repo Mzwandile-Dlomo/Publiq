@@ -23,6 +23,7 @@ vi.mock("@/lib/prisma", () => ({
       findMany: vi.fn(),
       groupBy: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
   },
 }));
@@ -156,7 +157,8 @@ describe("publish-queue", () => {
       };
 
       vi.mocked(prisma.publicationLog.findFirst).mockResolvedValueOnce(mockLog);
-      vi.mocked(prisma.publicationLog.update).mockResolvedValueOnce({
+      vi.mocked(prisma.publicationLog.updateMany).mockResolvedValueOnce({ count: 1 });
+      vi.mocked(prisma.publicationLog.findUnique).mockResolvedValueOnce({
         ...mockLog,
         status: "claimed",
         claimedAt: new Date(),
@@ -188,9 +190,7 @@ describe("publish-queue", () => {
       vi.mocked(prisma.publicationLog.findFirst).mockResolvedValueOnce(
         mockLog as PublicationLog
       );
-      vi.mocked(prisma.publicationLog.update).mockRejectedValueOnce(
-        new Error("Unique constraint failed")
-      );
+      vi.mocked(prisma.publicationLog.updateMany).mockResolvedValueOnce({ count: 0 });
 
       const result = await claimPublication(
         "content-123",
