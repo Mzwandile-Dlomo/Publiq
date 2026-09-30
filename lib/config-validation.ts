@@ -78,6 +78,18 @@ export function validateCoreConfig(): ValidationResult {
       errors.push("JWT_SECRET in production must be at least 32 characters");
     }
 
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret && cronSecret.length < 32) {
+      errors.push("CRON_SECRET in production must be at least 32 characters");
+    }
+
+    const encryptionKey = process.env.TOKEN_ENCRYPTION_KEY;
+    if (!encryptionKey) {
+      errors.push("Missing required production environment variable: TOKEN_ENCRYPTION_KEY");
+    } else if (!/^[a-f\d]{64}$/i.test(encryptionKey)) {
+      errors.push("TOKEN_ENCRYPTION_KEY must be exactly 64 hexadecimal characters");
+    }
+
     if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_APP_URL) {
       warnings.push(
         "NEXT_PUBLIC_APP_URL not set in production (consider setting for proper redirects)"
